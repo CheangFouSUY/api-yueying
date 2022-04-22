@@ -12,6 +12,7 @@ from ..utils import get_tokens
 Serializer class for registering new user
 """
 class UserRegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(style={'input_type': 'password'}, write_only = True)
     password2 = serializers.CharField(style={'input_type': 'password'}, write_only = True)
     
     class Meta:
@@ -26,13 +27,13 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         password2 = attrs.get('password2', '')
 
         if CustomUser.objects.filter(email=email).exists():
-            raise ValidationError(message="Email is taken.", status=status.HTTP_403_FORBIDDEN)
+            raise ValidationError("Email is taken.")
 
         if CustomUser.objects.filter(username=username).exists():
-            raise ValidationError(message="Username is taken.", status=status.HTTP_403_FORBIDDEN)
+            raise ValidationError("Username is taken.")
 
         if password != password2:
-            raise ValidationError(message="Password must match.", status=status.HTTP_403_FORBIDDEN)
+            raise ValidationError("Password must match.")
         
         # uses validators listed in settings.
         if validate_password(password) is None:
@@ -50,7 +51,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
 
 """
-Serializer class for actibate account through email verification
+Serializer class for activate account through email verification
 """
 class UserActivateSerializer(serializers.ModelSerializer):
     token = serializers.SerializerMethodField()
@@ -62,6 +63,46 @@ class UserActivateSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ['token']
 
+
+"""
+Serializer class for Request New Password
+"""
+class RequestPasswordSerializer(serializers.Serializer):
+    
+    class Meta:
+        model = CustomUser
+        fields = ['email']
+
+
+"""
+Serializer class for Reset Password
+"""
+class ResetPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+    password2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+
+    def __init__(self, *args, **kwargs):
+        print("kwargs:", kwargs)
+        print("self:", self)
+        self.user = kwargs.pop('user')
+        super().__init__(*args, **kwargs)
+
+    def validate(self, attrs):
+        password = attrs.get('password', '')
+        password2 = attrs.get('password2', '')
+        
+        if password != password2:
+            raise ValidationError("Password must match.")
+        
+        # uses validators listed in settings.
+        if validate_password(password) is None:
+            return super().validate(attrs)
+    
+    def update_password(self):
+        password = self.validated_data['password']
+        user = self.user
+        user.set_password(password)
+        user.save()
 
 """
 Serializer class for login
@@ -112,7 +153,7 @@ class LogoutSerializer(serializers.Serializer):
         try:
             RefreshToken(self.refresh).blacklist()
         except TokenError:
-            raise AuthenticationFailed(message="Token Error. Might already be blacklisted.")
+            raise AuthenticationFailed("Token Error. Might already be blacklisted.")
 
 """
 Serializer for getting basic user
