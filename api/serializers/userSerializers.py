@@ -1,4 +1,5 @@
 from email import message
+from pyexpat import model
 from ..models.users import CustomUser
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.exceptions import AuthenticationFailed
@@ -71,7 +72,7 @@ class RequestPasswordSerializer(serializers.Serializer):
     
     class Meta:
         model = CustomUser
-        fields = ['email']
+        fields = ['email', 'username']
 
 
 """
@@ -82,8 +83,6 @@ class ResetPasswordSerializer(serializers.Serializer):
     password2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
 
     def __init__(self, *args, **kwargs):
-        print("kwargs:", kwargs)
-        print("self:", self)
         self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
 
@@ -98,7 +97,7 @@ class ResetPasswordSerializer(serializers.Serializer):
         if validate_password(password) is None:
             return super().validate(attrs)
     
-    def update_password(self):
+    def updatePassword(self):
         password = self.validated_data['password']
         user = self.user
         user.set_password(password)
@@ -131,7 +130,9 @@ class LoginSerializer(serializers.Serializer):
         if not user:
             raise serializers.ValidationError('Invalid credentials, try again')
         elif not user.is_active:
-            serializers.ValidationError('Account disabled, contact admin')
+            raise serializers.ValidationError('Account disabled, contact admin')
+        elif user.isDeleted:
+            raise serializers.ValidationError('Account deleted, contact admin')
         else:
             return {
                 'username': user.username,
@@ -156,10 +157,47 @@ class LogoutSerializer(serializers.Serializer):
             raise AuthenticationFailed("Token Error. Might already be blacklisted.")
 
 """
-Serializer for getting basic user
+Serializer for User Detail
 """
-class GetBasicUserSerializer(serializers.ModelSerializer):
+class UserDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'email', 'username', 'firstName', 'lastName', 'about']
+        # might need to have multiple models later on
+        fields = ['id', 'email', 'username', 'firstName', 'lastName', 'about', 'gender', 'profile', 'dob']
+
+
+"""
+Serializer for Create User
+"""
+class UserCreateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CustomUser
+        fields = ['email', 'username']
+
+    def validate(self, attrs):
+        email = attrs.get('email', '')
+        username = attrs.get('username', '')
+
+        if CustomUser.objects.filter(email=email).exists():
+            raise ValidationError("Email is taken.")
+
+        if CustomUser.objects.filter(username=username).exists():
+            raise ValidationError("Username is taken.")
+
+    def save(self):
+        instance = self.Meta.model(
+            email=self.validated_data['email'],
+            username=self.validated_data['username']
+        )
+        instance.save()
+        return instance
+
+"""
+Serializer for List All Users
+"""
+class ListUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'username', 'email', 'profile']

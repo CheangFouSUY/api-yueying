@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.core.mail import EmailMessage
 from django.conf import Settings, settings
 from rest_framework.response import Response
@@ -18,16 +18,19 @@ class UserRegisterView(generics.GenericAPIView):
     serializer_class = UserRegisterSerializer
 
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        try: 
+            serializer = self.serializer_class(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
 
-        newUser = CustomUser.objects.get(email=serializer.data['email'])
-        newToken = get_tokens(newUser)['access']
+            newUser = CustomUser.objects.get(email=serializer.data['email'])
+            newToken = get_tokens(newUser)['access']
 
-        send_smtp(newUser, request, newToken, "Activate Account", "register_email.txt" )
+            send_smtp(newUser, request, newToken, "Activate Account", "register_email.txt" )
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except:
+            return Response({"message": "Register Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
 """
 GET: Activate Account
@@ -59,16 +62,19 @@ class RequestPasswordView(generics.GenericAPIView):
     serializer_class = RequestPasswordSerializer
 
     def post(self, request):
-        email = request.data.get('email', '')
+        try: 
+            email = request.data.get('email', '')
+            username = request.data.get('username', '')
 
-        if CustomUser.objects.filter(email=email).exists():
-            user = CustomUser.objects.get(email=email)
-            newToken = get_tokens(user)['access']
-
-            send_smtp(user, request, newToken, "Reset Password for YueYing", "reset_email.txt")
-
-        return Response({"message": "Please check your email for futher info."}, status=status.HTTP_200_OK)
-
+            if CustomUser.objects.filter(email=email).exists():
+                user = CustomUser.objects.get(email=email)
+                if not user.username == username: # incase the username is not the same as email
+                    return Response({"message": "Invalid Username or Email"}, status=status.HTTP_400_BAD_REQUEST)
+                newToken = get_tokens(user)['access']
+                send_smtp(user, request, newToken, "Reset Password for YueYing", "reset_email.txt")
+                return Response({"message": "Please check your email for futher info."}, status=status.HTTP_200_OK)
+        except:
+            return Response({"message": "Failed to Request Password"}, status=status.HTTP_400_BAD_REQUEST)
 
 """
 GET: Validate Token for Reset Password
@@ -85,9 +91,9 @@ class ResetPasswordTokenValidateView(generics.GenericAPIView):
             authToken = get_tokens(user)
             return Response(authToken, status=status.HTTP_200_OK)
         except jwt.ExpiredSignatureError:
-            return Response({"error": "Reset Link Expire"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Reset Link Expire"}, status=status.HTTP_400_BAD_REQUEST)
         except jwt.exceptions.DecodeError:
-            return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 """
@@ -98,12 +104,35 @@ class ResetPasswordView(generics.GenericAPIView):
     serializer_class = ResetPasswordSerializer
 
     def put(self, request):
-        serializer = self.get_serializer(data=request.data, user=self.request.user)
-        if serializer.is_valid(raise_exception=True):
-            serializer.update_password()
+        try:
+            serializer = self.get_serializer(data=request.data, user=self.request.user)
+            if serializer.is_valid(raise_exception=True):
+                serializer.updatePassword()
+                # When update success, should terminate the token, so it cannot be used again
+                return Response({"message": "Password Reset Successfully"}, status=status.HTTP_200_OK)
+        except:
+            return Response({"message": "Password Reset Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
-            # When update success, should terminate the token, so it cannot be used again
-        return Response({"message": "Password Reset Successfully"}, status=status.HTTP_200_OK)
+
+# class RequestPasswordBySecurityQuestionView(generics.GenericAPIView):
+#     permission_classes = [permissions.AllowAny]
+#     serializer_class = RequestPasswordSerializer
+#     def post(self, request):
+#         try: 
+#             email = request.data.get('email', '')
+#             username = request.data.get('username', '')
+
+#             if CustomUser.objects.filter(email=email).exists():
+#                 user = CustomUser.objects.get(email=email)
+#                 if not user.username == username: # incase the username is not the same as email
+#                     return Response({"message": "Invalid Username or Email"}, status=status.HTTP_400_BAD_REQUEST)
+                
+#                 newToken = get_tokens(user)['access']
+#                 send_smtp(user, request, newToken, "Reset Password for YueYing", "reset_email.txt")
+#                 return Response({"message": "Please check your email for futher info."}, status=status.HTTP_200_OK)
+#         except:
+#             return Response({"message": "Failed to Request Password"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 """
 POST: Login
@@ -113,10 +142,9 @@ class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
 
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid(raise_exception=True):
+            serializer = self.serializer_class(data=request.data)
+            serializer.is_valid(raise_exception=True)
             return Response(serializer.data, status= status.HTTP_200_OK)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 """
 POST: Logout
@@ -126,9 +154,79 @@ class LogoutView(generics.GenericAPIView):
     serializer_class = LogoutSerializer
 
     def post(self, request):
-        # apparently no need to delete access token on logout, it should time out quickly enough anyway.
-        # https://medium.com/devgorilla/how-to-log-out-when-using-jwt-a8c7823e8a6
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            # apparently no need to delete access token on logout, it should time out quickly enough anyway.
+            # https://medium.com/devgorilla/how-to-log-out-when-using-jwt-a8c7823e8a6
+            serializer = self.serializer_class(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except:
+            return Response({"message": "Logout Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+
+""" For Admin(superuser)
+GET: Get User Detail By Id  # for any
+PUT: Update User By Id      # for superuser or owner
+DELETE: Delete User By Id (set isDelete = True)     # for superuser or owner
+"""
+class UserDetailView(generics.GenericAPIView):
+    serializer_class = UserDetailSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, userId):
+        try:
+            user = CustomUser.objects.get(pk=userId)
+            serializer=self.serializer_class(instance=user)
+            return Response(data=serializer.data ,status=status.HTTP_200_OK)
+        except:
+            return Response({"message": "Get User Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, userId):
+        try:
+            user = get_object_or_404(CustomUser, pk=userId)
+            serializer = self.serializer_class(instance=user, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({"message": "Update User Successfully"}, status=status.HTTP_200_OK)
+        except:
+            return Response({"message": "Update User Failed"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, userId):
+        try:
+            user = get_object_or_404(CustomUser, pk=userId)
+            user.isDeleted = True
+            user.save()
+            return Response({"message": "Delete User Successfully"}, status=status.HTTP_200_OK)
+        except:
+            return Response({"message": "Delete User Failed"}, status=status.HTTP_400_BAD_REQUEST)
+
+"""
+GET: Get All Users
+POST: Create User (email, username)
+"""
+class UserListAndCreateView(generics.ListCreateAPIView):
+    serializer_class = ListUserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.request.method in ['GET']:
+            # Since the ReadSerializer does nested lookups
+            # in multiple tables, only use it when necessary
+            return ListUserSerializer
+        return UserCreateSerializer
+
+    def get_queryset(self):
+        return CustomUser.objects.filter(isDeleted=False, is_active=True)
+
+
+    def post(self, request): 
+        serializer = self.get_serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        newUser = CustomUser.objects.get(email=serializer.data['email'])
+        newToken = get_tokens(newUser)['access']
+
+        send_smtp(newUser, request, newToken, "Activate Account", "register_email.txt" )
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

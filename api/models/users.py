@@ -1,6 +1,8 @@
+from asyncio.windows_events import NULL
 import uuid
 from django.db import models
 from django.utils import timezone
+import datetime
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from ..utils import get_tokens
@@ -33,6 +35,12 @@ class CustomUserManager(BaseUserManager):
 
 # Custom User Model
 class CustomUser(AbstractBaseUser, PermissionsMixin):
+    GENDER = (
+        ('O', 'Prefer Not to Say'),
+        ('M', 'Male'),
+        ('F', 'Female'),
+    )
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.CharField(max_length=150, unique=True)
     firstName = models.CharField(max_length=150)
@@ -46,6 +54,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     profile = models.ImageField(upload_to="uploads/", blank=True)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
+    gender = models.CharField(max_length=10, choices=GENDER, default=GENDER[0][0])
+    securityQuestion = models.CharField(max_length=200, default=NULL)
+    securityAnswer = models.CharField(max_length=500, default=NULL)
+    dob = models.DateField(default=datetime.date(2000, 1, 1))
 
     objects = CustomUserManager()
 

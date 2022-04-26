@@ -21,6 +21,10 @@ urlpatterns = [
     path('auth/login/', LoginView.as_view(), name="login"),
     path('auth/logout/', LogoutView.as_view(), name="logout"),
     
+    # User Path
+    path('user/<uuid:userId>', UserDetailView.as_view(), name="user_detail"),
+    path('user/', UserListAndCreateView.as_view(), name="user_list_and_create"),
+
     
     
     # path('auth/', obtain_auth_token),
