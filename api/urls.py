@@ -1,4 +1,5 @@
 from django.urls import path
+from api.views.bookApiView import BookDetailView, BookListAndCreateView
 
 from api.views.userApiView import *
 from .views import *
@@ -24,6 +25,10 @@ urlpatterns = [
     # User Path
     path('user/<uuid:userId>', UserDetailView.as_view(), name="user_detail"),
     path('user/', UserListAndCreateView.as_view(), name="user_list_and_create"),
+
+    # Books Path
+    path('book/<uuid:bookId>', BookDetailView.as_view(), name="user_detail"),
+    path('book/', BookListAndCreateView.as_view(), name="user_list_and_create"),
 
     
     
