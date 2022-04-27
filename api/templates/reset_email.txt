@@ -1,0 +1,14 @@
+Hi {{ username }}!
+
+To log into your account, visit:
+
+{{ protocol }}://{{ domain }}/magic?token={{ token }}
+
+
+
+您好 {{ username }}!
+
+为了登录阅影账户，请访问下面的链接：
+
+{{ protocol }}://{{ domain }}/magic?token={{ token }}
+

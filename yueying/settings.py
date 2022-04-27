@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 
 from pathlib import Path
 import environ
+from datetime import timedelta  # for auth token lifetimes
 
 env = environ.Env(
     DEBUG=(bool, False)
@@ -45,8 +46,42 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # Third Party Apps
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
+    'rest_framework_simplejwt',
+
+    # Internal Apps
+    'api',
 ]
+
+REST_FRAMEWORK = {
+    "NON_FIELD_ERRORS_KEY":"error",
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        #  'api.authentication.TokenAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated'
+        # 'rest_framework.permissions.IsAuthenticatedOrReadOnly'
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.MultiPartParser',
+        'rest_framework.parsers.FormParser'
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 10
+}
+
+SIMPLE_JWT = {
+    # 'AUTH_HEADER_TYPES': ['Bearer'],
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # default is 5min
+    'REFRESH_TOKEN_LIFETIME': timedelta(hours=3),  # default is 1 day
+    'ROTATE_REFRESH_TOKENS': True,
+    'USER_ID_FIELD': 'id',
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -57,6 +92,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 
 ROOT_URLCONF = 'yueying.urls'
 
@@ -112,6 +148,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -122,6 +161,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# Adding CustomUser model from users app.
+# https://docs.djangoproject.com/en/3.2/topics/auth/customizing/
+
+AUTH_USER_MODEL = 'api.CustomUser'
+
 # Email Sending Protocol
 
 EMAIL_FROM_USER = env('EMAIL_FROM_USER')
@@ -131,6 +175,7 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = env('EMAIL_USE_TLS')
 EMAIL_PORT = env('EMAIL_PORT')
 
+BACKEND_URL = env('BACKEND_URL')
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
