@@ -171,7 +171,7 @@ DELETE: Delete User By Id (set isDelete = True)     # for superuser or owner
 """
 class UserDetailView(generics.GenericAPIView):
     serializer_class = UserDetailSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request, userId):
         try:
@@ -206,7 +206,7 @@ POST: Create User (email, username)
 """
 class UserListAndCreateView(generics.ListCreateAPIView):
     serializer_class = ListUserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_serializer_class(self):
         if self.request.method in ['GET']:
@@ -220,7 +220,8 @@ class UserListAndCreateView(generics.ListCreateAPIView):
 
 
     def post(self, request): 
-        serializer = self.get_serializer_class(data=request.data)
+        
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
