@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework import generics, status, views, permissions
 
@@ -30,7 +31,7 @@ class GroupDetailView(generics.GenericAPIView):
         group = get_object_or_404(Group, pk=groupId)
         serializer = self.serializer_class(instance=group, data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer.save(updatedAt=timezone.now())
         return Response({"message": "Update Group Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
 
     # Delete Group By Id

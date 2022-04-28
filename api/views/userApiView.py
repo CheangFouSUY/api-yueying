@@ -1,6 +1,6 @@
-from django.shortcuts import get_object_or_404, render
-from django.core.mail import EmailMessage
-from django.conf import Settings, settings
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.conf import settings
 from rest_framework.response import Response
 from rest_framework import generics, status, views, permissions
 
@@ -46,7 +46,7 @@ class UserActivateView(views.APIView):
             user = CustomUser.objects.get(id=payload['user_id'])
             if not user.is_active:
                 user.is_active = True
-                user.save()
+                user.save(updatedAt=timezone.now())
             return Response({"message": "Activate Account Successfully!"}, status=status.HTTP_200_OK)
         except jwt.ExpiredSignatureError:
             return Response({"error": "Activation Code Expire"}, status=status.HTTP_400_BAD_REQUEST)
@@ -186,7 +186,7 @@ class UserDetailView(generics.GenericAPIView):
             user = get_object_or_404(CustomUser, pk=userId)
             serializer = self.serializer_class(instance=user, data=request.data)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            serializer.save(updatedAt=timezone.now())
             return Response({"message": "Update User Successfully"}, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Update User Failed"}, status=status.HTTP_400_BAD_REQUEST)
@@ -195,7 +195,7 @@ class UserDetailView(generics.GenericAPIView):
         try:
             user = get_object_or_404(CustomUser, pk=userId)
             user.isDeleted = True
-            user.save()
+            user.save(updatedAt=timezone.now())
             return Response({"message": "Delete User Successfully"}, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Delete User Failed"}, status=status.HTTP_400_BAD_REQUEST)

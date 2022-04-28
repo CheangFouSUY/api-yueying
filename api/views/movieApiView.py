@@ -1,6 +1,8 @@
-from django.shortcuts import get_list_or_404, get_object_or_404
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework import generics, status, views, permissions
+
 
 from ..serializers.movieSerializers import *
 from ..utils import *
@@ -30,7 +32,7 @@ class MovieDetailView(generics.GenericAPIView):
         movie = get_object_or_404(Movie, pk=movieId)
         serializer = self.serializer_class(instance=movie, data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer.save(updatedAt=timezone.now())
         return Response({"message": "Update Movie Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
 
     # Delete Movie By Id

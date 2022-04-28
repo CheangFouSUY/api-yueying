@@ -1,4 +1,3 @@
-from asyncio.windows_events import NULL
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import generics, status, views, permissions
