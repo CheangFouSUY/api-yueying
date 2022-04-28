@@ -1,8 +1,9 @@
 from django.urls import path
-from api.views.bookApiView import BookDetailView, BookListAndCreateView
-from api.views.movieApiView import MovieDetailView, MovieListAndCreateView
+from api.views.bookApiView import *
+from api.views.movieApiView import *
 from api.views.groupApiView import *
 from api.views.userApiView import *
+from api.views.feedApiView import *
 from .views import *
 
 
@@ -42,6 +43,10 @@ urlpatterns = [
     # Groups Path
     path('group/<uuid:groupId>', GroupDetailView.as_view(), name="group_detail"),
     path('group/', GroupListAndCreateView.as_view(), name="group_list_and_create"),
+
+    # Feed Path
+    path('feed/<uuid:feedId>', FeedDetailView.as_view(), name="feed_detail"),
+    path('feed/', FeedListAndCreateView.as_view(), name="feed_list_and_create"),
 
 
     

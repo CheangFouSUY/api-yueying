@@ -3,18 +3,16 @@ from django.utils import timezone
 from django.db import models
 from datetime import date
 from .users import CustomUser
+from .groups import Group
 
-class Group(models.Model):
-    CATEGORIES = (
-        ("b", "Book"),
-        ("m", "Movie"),
-        ("o", "Other")
-    )
+class Feed(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    groupName = models.CharField(max_length=150)
+    title = models.CharField(max_length=150)
     description = models.TextField(max_length=5000)
-    category = models.CharField(max_length=150, choices=CATEGORIES, default=CATEGORIES[0][0])
-    createdBy = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
+    img = models.ImageField(upload_to="uploads/feeds", blank=True)
+    isPublic = models.BooleanField(default=True)
     isDeleted = models.BooleanField(default=False)
+    createdBy = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
+    belongTo = models.ForeignKey("Group", on_delete=models.CASCADE, null=True, blank=True)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
