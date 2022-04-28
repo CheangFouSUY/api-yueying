@@ -1,13 +1,12 @@
-from email import message
-from pyexpat import model
-from ..models.users import CustomUser
+from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework import serializers, status
 from rest_framework.validators import ValidationError
-from django.contrib.auth import authenticate
-from django.contrib.auth.password_validation import validate_password
 from ..utils import get_tokens
+from ..models.users import CustomUser
 
 """
 Serializer class for registering new user
@@ -101,7 +100,7 @@ class ResetPasswordSerializer(serializers.Serializer):
         password = self.validated_data['password']
         user = self.user
         user.set_password(password)
-        user.save()
+        user.save(updatedAt=timezone.now())
 
 """
 Serializer class for login
