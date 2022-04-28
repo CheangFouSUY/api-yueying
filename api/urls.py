@@ -1,5 +1,6 @@
 from django.urls import path
 from api.views.bookApiView import BookDetailView, BookListAndCreateView
+from api.views.movieApiView import MovieDetailView, MovieListAndCreateView
 
 from api.views.userApiView import *
 from .views import *
@@ -30,7 +31,15 @@ urlpatterns = [
     path('book/<uuid:bookId>', BookDetailView.as_view(), name="user_detail"),
     path('book/', BookListAndCreateView.as_view(), name="user_list_and_create"),
 
-    
+    # Books Path
+    path('book/<uuid:bookId>', BookDetailView.as_view(), name="book_detail"),
+    path('book/', BookListAndCreateView.as_view(), name="book_list_and_create"),
+
+    # Movies Path
+    path('movie/<uuid:movieId>', MovieDetailView.as_view(), name="movie_detail"),
+    path('movie/', MovieListAndCreateView.as_view(), name="movie_list_and_create"),
+
+
     
     # path('auth/', obtain_auth_token),
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
