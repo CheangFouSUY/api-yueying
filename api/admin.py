@@ -4,6 +4,7 @@ from .models.books import Book
 from .models.movies import Movie
 from .models.groups import Group
 from .models.feeds import Feed
+from .models.reviews import Review
 # Register your models here.
 
 class UserAdminConfig(admin.ModelAdmin):
@@ -21,8 +22,12 @@ class GroupAdminConfig(admin.ModelAdmin):
 class FeedAdminConfig(admin.ModelAdmin):
     list_display = ('id', 'title', 'isPublic','createdBy', 'belongTo')
 
+class ReviewAdminConfig(admin.ModelAdmin):
+    list_display = ('id', 'title', 'createdBy')
+
 admin.site.register(CustomUser, UserAdminConfig)
 admin.site.register(Book, BookAdminConfig)
 admin.site.register(Movie, MovieAdminConfig)
 admin.site.register(Group, GroupAdminConfig)
 admin.site.register(Feed, FeedAdminConfig)
+admin.site.register(Review, ReviewAdminConfig)

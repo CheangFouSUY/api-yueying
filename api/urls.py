@@ -4,6 +4,7 @@ from api.views.movieApiView import *
 from api.views.groupApiView import *
 from api.views.userApiView import *
 from api.views.feedApiView import *
+from api.views.reviewApiView import *
 from .views import *
 
 
@@ -47,6 +48,10 @@ urlpatterns = [
     # Feed Path
     path('feed/<uuid:feedId>', FeedDetailView.as_view(), name="feed_detail"),
     path('feed/', FeedListAndCreateView.as_view(), name="feed_list_and_create"),
+
+    # Review Path
+    path('review/<uuid:reviewId>', ReviewDetailView.as_view(), name="review_detail"),
+    path('review/', ReviewListAndCreateView.as_view(), name="review_list_and_create"),
 
 
     

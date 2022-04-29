@@ -55,8 +55,6 @@ class MovieListAndCreateView(generics.ListCreateAPIView):
 
     def get_serializer_class(self):
         if self.request.method in ['GET']:
-            # Since the ReadSerializer does nested lookups
-            # in multiple tables, only use it when necessary
             return ListMovieSerializer
         return MovieCreateSerializer
 

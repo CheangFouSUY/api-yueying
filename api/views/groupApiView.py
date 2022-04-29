@@ -54,8 +54,6 @@ class GroupListAndCreateView(generics.ListCreateAPIView):
 
     def get_serializer_class(self):
         if self.request.method in ['GET']:
-            # Since the ReadSerializer does nested lookups
-            # in multiple tables, only use it when necessary
             return ListGroupSerializer
         return GroupCreateSerializer
 
