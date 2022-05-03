@@ -46,7 +46,7 @@ class UserActivateView(views.APIView):
             user = CustomUser.objects.get(id=payload['user_id'])
             if not user.is_active:
                 user.is_active = True
-                user.save(updatedAt=timezone.now())
+                #user.save(updatedAt=timezone.now())
             return Response({"message": "Activate Account Successfully!"}, status=status.HTTP_200_OK)
         except jwt.ExpiredSignatureError:
             return Response({"error": "Activation Code Expire"}, status=status.HTTP_400_BAD_REQUEST)

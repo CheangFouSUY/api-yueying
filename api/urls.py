@@ -6,6 +6,8 @@ from api.views.userApiView import *
 from api.views.feedApiView import *
 from api.views.reviewApiView import *
 from .views import *
+from .views.feedbackApiView import *
+from .views.reportApiView import *
 
 
 from rest_framework.authtoken.views import obtain_auth_token
@@ -14,6 +16,8 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView,
 )
+
+
 
 urlpatterns = [
     # User Authentication 
@@ -33,10 +37,6 @@ urlpatterns = [
     path('book/<uuid:bookId>', BookDetailView.as_view(), name="user_detail"),
     path('book/', BookListAndCreateView.as_view(), name="user_list_and_create"),
 
-    # Books Path
-    path('book/<uuid:bookId>', BookDetailView.as_view(), name="book_detail"),
-    path('book/', BookListAndCreateView.as_view(), name="book_list_and_create"),
-
     # Movies Path
     path('movie/<uuid:movieId>', MovieDetailView.as_view(), name="movie_detail"),
     path('movie/', MovieListAndCreateView.as_view(), name="movie_list_and_create"),
@@ -53,6 +53,13 @@ urlpatterns = [
     path('review/<uuid:reviewId>', ReviewDetailView.as_view(), name="review_detail"),
     path('review/', ReviewListAndCreateView.as_view(), name="review_list_and_create"),
 
+    #Report Path
+    path('report/<uuid:reportId>', ReportDetailView.as_view(), name="report_detail"),
+    path('report/', ReportListAndCreateView.as_view(), name="report_list_and_create"),
+
+    # Feedback Path
+    path('feedback/<uuid:feedbackId>', FeedbackDetailView.as_view(), name="feedback_detail"),
+    path('feedback/', FeedbackListAndCreateView.as_view(), name="feedback_list_and_create"),
 
     
     # path('auth/', obtain_auth_token),

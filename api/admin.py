@@ -1,4 +1,7 @@
 from django.contrib import admin
+
+from .models.feedback import Feedback
+from .models.report import Report
 from .models.users import CustomUser
 from .models.books import Book
 from .models.movies import Movie
@@ -25,9 +28,17 @@ class FeedAdminConfig(admin.ModelAdmin):
 class ReviewAdminConfig(admin.ModelAdmin):
     list_display = ('id', 'title', 'createdBy')
 
+class ReportAdminConfig(admin.ModelAdmin):
+    list_display = ('id', 'title', 'category','createdBy','result')
+
+class FeedbackAdminConfig(admin.ModelAdmin):
+    list_display = ('id', 'title', 'createdBy')
+
 admin.site.register(CustomUser, UserAdminConfig)
 admin.site.register(Book, BookAdminConfig)
 admin.site.register(Movie, MovieAdminConfig)
 admin.site.register(Group, GroupAdminConfig)
 admin.site.register(Feed, FeedAdminConfig)
 admin.site.register(Review, ReviewAdminConfig)
+admin.site.register(Report, ReportAdminConfig)
+admin.site.register(Feedback, FeedbackAdminConfig)
