@@ -3,15 +3,15 @@ from django.db import models
 
 
 class Report(models.Model):
-    CATEGORY = [
-        (0, '垃圾内容'),
-        (1, '色情内容'),
-        (2, '非法活动'),
-        (3, '侵犯版权'),
-        (4, '骚扰、欺凌和威胁'),
-        (5, '仇恨言论'),
-        (6, '暴力内容'),
-    ]
+    CATEGORY = (
+        (1, '垃圾内容'),
+        (2, '色情内容'),
+        (3, '非法活动'),
+        (4, '侵犯版权'),
+        (5, '骚扰、欺凌和威胁'),
+        (6, '仇恨言论'),
+        (7, '暴力内容'),
+    )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=150)

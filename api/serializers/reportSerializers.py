@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..models.report import Report
+from ..models.reports import Report
 
 
 """

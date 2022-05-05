@@ -41,6 +41,14 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         ('F', 'Female'),
     )
 
+    SECURITY = (
+        (1,'您最喜欢的颜色是'),
+        (2,'您最讨厌的食物'),
+        (3,'您的最要好闺蜜/兄弟是'),
+        (4,'您的爱好是'),
+        (5,'您的初恋是'),
+    )
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.CharField(max_length=150, unique=True)
     firstName = models.CharField(max_length=150)
@@ -55,7 +63,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
     gender = models.CharField(max_length=10, choices=GENDER, default=GENDER[0][0])
-    securityQuestion = models.CharField(max_length=200, default=NULL)
+    securityQuestion = models.IntegerField(choices=SECURITY,default = 0)
     securityAnswer = models.CharField(max_length=500, default=NULL)
     dob = models.DateField(default=datetime.date(2000, 1, 1))
 
