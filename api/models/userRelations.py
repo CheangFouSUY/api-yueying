@@ -4,9 +4,9 @@ from django.utils import timezone
 #Book like/dislike by user
 class userBook(models.Model):
     CHOICE=(
-        ('O', 'Other')
-        ('L', 'Like')
-        ('D', 'Dislike')
+        ('O', 'Other'),
+        ('L', 'Like'),
+        ('D', 'Dislike'),
     )
     book = models.ForeignKey("Book", on_delete=models.CASCADE, null=False, blank=False)
     user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
@@ -18,9 +18,9 @@ class userBook(models.Model):
 #Movie like/dislike by user
 class userMovie(models.Model):
     CHOICE=(
-        ('O', 'Other')
-        ('L', 'Like')
-        ('D', 'Dislike')
+        ('O', 'Other'),
+        ('L', 'Like'),
+        ('D', 'Dislike'),
     )
     movie = models.ForeignKey("Movie", on_delete=models.CASCADE, null=False, blank=False)
     user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
@@ -32,9 +32,9 @@ class userMovie(models.Model):
 #Feed followed,like/dislike by user
 class userFeed(models.Model):
     CHOICE=(
-        ('O', 'Other')
-        ('L', 'Like')
-        ('D', 'Dislike')
+        ('O', 'Other'),
+        ('L', 'Like'),
+        ('D', 'Dislike'),
     )
     feed = models.ForeignKey("Feed", on_delete=models.CASCADE, null=False, blank=False)
     user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
@@ -46,9 +46,9 @@ class userFeed(models.Model):
 #Review like/dislike by user
 class userReview(models.Model):
     CHOICE=(
-        ('O', 'Other')
-        ('L', 'Like')
-        ('D', 'Dislike')
+        ('O', 'Other'),
+        ('L', 'Like'),
+        ('D', 'Dislike'),
     )
     review = models.ForeignKey("Feed", on_delete=models.CASCADE, null=False, blank=False)
     user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)

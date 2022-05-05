@@ -5,7 +5,7 @@ from datetime import date
 
 class Book(models.Model):
     CATEGORY = (
-        (0, '其他')
+        (0, '其他'),
         (1, '爱情'),
         (2, '恐怖'),
         (3, '悬疑'),

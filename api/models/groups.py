@@ -8,7 +8,7 @@ class Group(models.Model):
     CATEGORIES = (
         ("b", "Book"),
         ("m", "Movie"),
-        ("o", "Other")
+        ("o", "Other"),
     )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     groupName = models.CharField(max_length=150)
