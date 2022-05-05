@@ -6,6 +6,7 @@ from datetime import date
 
 class Movie(models.Model):
     CATEGORY = (
+        (0, '其他')
         (1, '爱情'),
         (2, '恐怖'),
         (3, '悬疑'),
@@ -25,6 +26,6 @@ class Movie(models.Model):
     director = models.CharField(max_length=150)
     actor = models.CharField(max_length=150)
     year = models.DateField(default=date(2000, 1, 1))
-    category = models.IntegerField(choices=CATEGORY,null=False, blank=False)
+    category = models.IntegerField(choices=CATEGORY,null=False, blank=False,default=0)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
