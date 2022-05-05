@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..models.feedback import Feedback
+from ..models.feedbacks import Feedback
 
 
 """

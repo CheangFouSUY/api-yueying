@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from .models.feedback import Feedback
-from .models.report import Report
+from .models.feedbacks import Feedback
+from .models.reports import Report
 from .models.users import CustomUser
 from .models.books import Book
 from .models.movies import Movie
