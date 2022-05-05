@@ -10,11 +10,12 @@ class userBook(models.Model):
     book = models.ForeignKey("Book", on_delete=models.CASCADE, null=False, blank=False)
     user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
     response = models.CharField(choices=CHOICE,null=True, blank=True)
+    isSaved = models.BooleanField(default=False)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
 
 #Movie like/dislike by user
-class userBook(models.Model):
+class userMovie(models.Model):
     CHOICE=(
         ('L','Like')
         ('D','Dislike')
@@ -22,6 +23,7 @@ class userBook(models.Model):
     movie = models.ForeignKey("Movie", on_delete=models.CASCADE, null=False, blank=False)
     user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
     response = models.CharField(choices=CHOICE,null=True, blank=True)
+    isSaved = models.BooleanField(default=False)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
 
