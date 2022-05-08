@@ -46,4 +46,16 @@ class userFeedDetailSerializer(serializers.ModelSerializer):
             'updatedAt': {'read_only': True},
         }
 
+class userReviewDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = userReview
+        # need modification later on when implement with multiple models
+        fields = ['review', 'user', 'response', 'createdAt', 'updatedAt']
+        extra_kwargs = {
+            'review': {'read_only': True},
+            'user': {'read_only': True},
+            'createdAt': {'read_only': True},
+            'updatedAt': {'read_only': True},
+        }
+
 

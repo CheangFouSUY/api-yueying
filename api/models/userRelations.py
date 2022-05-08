@@ -50,7 +50,7 @@ class userReview(models.Model):
         ('L', 'Like'),
         ('D', 'Dislike'),
     )
-    review = models.ForeignKey("Feed", on_delete=models.CASCADE, null=False, blank=False)
+    review = models.ForeignKey("Review", on_delete=models.CASCADE, null=False, blank=False)
     user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
     response = models.CharField(choices=CHOICE, max_length=10, null=False, blank=False,default='O')
     createdAt = models.DateTimeField(default=timezone.now)
