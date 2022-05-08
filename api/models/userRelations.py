@@ -12,6 +12,8 @@ class userBook(models.Model):
     user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
     response = models.CharField(choices=CHOICE, max_length=10, null=False, blank=False,default='O')
     isSaved = models.BooleanField(default=False)
+    isRated = models.BooleanField(default=False)
+    rateScore = models.IntegerField(default=-1)     # socre effective when > 0
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
 
@@ -26,6 +28,8 @@ class userMovie(models.Model):
     user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
     response = models.CharField(choices=CHOICE, max_length=10, null=False, blank=False,default='O')
     isSaved = models.BooleanField(default=False)
+    isRated = models.BooleanField(default=False)
+    rateScore = models.IntegerField(default=-1)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
 

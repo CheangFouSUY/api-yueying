@@ -1,11 +1,13 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db.models import Avg
 from rest_framework.response import Response
 from rest_framework import generics, status, views, permissions
 
 from ..serializers.bookSerializers import *
 from ..utils import *
 from ..models.books import Book
+from ..models.userRelations import *
 
 
 """ For Admin(superuser)
@@ -17,11 +19,24 @@ class BookDetailView(generics.GenericAPIView):
     serializer_class = BookDetailSerializer
     permissions_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    def get_serializer_class(self):
+        if self.request.method in ['GET']:
+            return BookProfileSerializer
+        return BookDetailSerializer
+
     # Get Book Detail By Id
     def get(self, request, bookId):
         try:
             book = get_object_or_404(Book, pk=bookId)
-            serializer = self.serializer_class(instance=book)
+            allUserBooks = userBook.objects.filter(book=book)
+            rating = allUserBooks.filter(isRated=True).aggregate(Avg('rateScore'))
+            likes = allUserBooks.filter(response='L').count()
+            dislikes = allUserBooks.filter(response='D').count()
+            # rateScore using aggregate method, will return dic, and name is field__avg, value=null if no result
+            book.rating = rating['rateScore__avg'] if rating['rateScore__avg'] else 0
+            book.likes = likes
+            book.dislikes = dislikes
+            serializer = self.get_serializer(instance=book)
             return Response(data=serializer.data ,status=status.HTTP_200_OK)
         except:
             return Response({"message": "Get Book Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
@@ -29,7 +44,7 @@ class BookDetailView(generics.GenericAPIView):
     # Update Book By Id
     def put(self, request, bookId):
         book = get_object_or_404(Book, pk=bookId)
-        serializer = self.serializer_class(instance=book, data=request.data)
+        serializer = self.get_serializer(instance=book, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(updatedAt=timezone.now())
         return Response({"message": "Update Book Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
@@ -59,7 +74,16 @@ class BookListAndCreateView(generics.ListCreateAPIView):
 
     # Get All Books
     def get_queryset(self):
-        return Book.objects.filter()
+        allBooks = Book.objects.filter()
+        for book in allBooks:
+            allUserBooks = userBook.objects.filter(book=book)
+            rating = allUserBooks.filter(isRated=True).aggregate(Avg('rateScore'))
+            likes = allUserBooks.filter(response='L').count()
+            dislikes = allUserBooks.filter(response='D').count()
+            book.rating = rating['rateScore__avg'] if rating['rateScore__avg'] else 0
+            book.likes = likes
+            book.dislikes = dislikes
+        return allBooks
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)

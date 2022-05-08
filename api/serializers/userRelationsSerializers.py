@@ -12,7 +12,7 @@ class userBookDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = userBook
         # need modification later on when implement with multiple models
-        fields = ['book', 'user', 'response', 'isSaved', 'createdAt', 'updatedAt']
+        fields = ['book', 'user', 'response', 'isSaved', 'isRated', 'rateScore', 'createdAt', 'updatedAt']
         extra_kwargs = {
             'book': {'read_only': True},
             'user': {'read_only': True},
@@ -25,7 +25,7 @@ class userMovieDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = userMovie
         # need modification later on when implement with multiple models
-        fields = ['movie', 'user', 'response', 'isSaved', 'createdAt', 'updatedAt']
+        fields = ['movie', 'user', 'response', 'isSaved', 'isRated', 'rateScore', 'createdAt', 'updatedAt']
         extra_kwargs = {
             'movie': {'read_only': True},
             'user': {'read_only': True},

@@ -197,7 +197,7 @@ class UserDetailView(generics.GenericAPIView):
     def put(self, request, userId):
         try:
             user = get_object_or_404(CustomUser, pk=userId)
-            serializer = self.serializer_class(instance=user, data=request.data)
+            serializer = self.get_serializer(instance=user, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(updatedAt=timezone.now())
             return Response({"message": "Update User Successfully"}, status=status.HTTP_200_OK)
