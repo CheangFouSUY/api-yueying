@@ -8,6 +8,9 @@ from .models.movies import Movie
 from .models.groups import Group
 from .models.feeds import Feed
 from .models.reviews import Review
+from .models.userRelations import *
+from .models.groupRelations import *
+
 # Register your models here.
 
 class UserAdminConfig(admin.ModelAdmin):
@@ -34,6 +37,25 @@ class ReportAdminConfig(admin.ModelAdmin):
 class FeedbackAdminConfig(admin.ModelAdmin):
     list_display = ('id', 'title', 'createdBy')
 
+class UserBookAdminConfig(admin.ModelAdmin):
+    list_display = ('book', 'user', 'response', 'isSaved')
+
+class UserMovieAdminConfig(admin.ModelAdmin):
+    list_display = ('movie', 'user', 'response', 'isSaved')
+
+class UserFeedAdminConfig(admin.ModelAdmin):
+    list_display = ('feed', 'user', 'response', 'isFollowed')
+
+class UserReviewAdminConfig(admin.ModelAdmin):
+    list_display = ('review', 'user', 'response')
+
+class UserGroupAdminConfig(admin.ModelAdmin):
+    list_display = ('group', 'user', 'isAdmin', 'isBanned')
+
+class GroupFeedAdminConfig(admin.ModelAdmin):
+    list_display = ('feed', 'group', 'isPin', 'isFeatured')
+
+
 admin.site.register(CustomUser, UserAdminConfig)
 admin.site.register(Book, BookAdminConfig)
 admin.site.register(Movie, MovieAdminConfig)
@@ -42,3 +64,9 @@ admin.site.register(Feed, FeedAdminConfig)
 admin.site.register(Review, ReviewAdminConfig)
 admin.site.register(Report, ReportAdminConfig)
 admin.site.register(Feedback, FeedbackAdminConfig)
+admin.site.register(userBook, UserBookAdminConfig)
+admin.site.register(userMovie, UserMovieAdminConfig)
+admin.site.register(userFeed, UserFeedAdminConfig)
+admin.site.register(userReview, UserReviewAdminConfig)
+admin.site.register(userGroup, UserGroupAdminConfig)
+admin.site.register(groupFeed, GroupFeedAdminConfig)
