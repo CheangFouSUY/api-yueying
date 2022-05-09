@@ -6,6 +6,8 @@ from django.utils import timezone
 from ..serializers.feedSerializers import *
 from ..utils import *
 from ..models.feeds import Feed
+from ..models.reviews import Review
+from ..models.userRelations import *
 
 
 """ For Admin(superuser)
@@ -17,11 +19,23 @@ class FeedDetailView(generics.GenericAPIView):
     serializer_class = FeedDetailSerializer
     permissions_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    def get_serializer_class(self):
+        if self.request.method in ['GET']:
+            return FeedProfileSerializer
+        return FeedDetailSerializer
+
     # Get Feed Detail By Id
     def get(self, request, feedId):
         try:
             feed = get_object_or_404(Feed, pk=feedId)
-            serializer = self.serializer_class(instance=feed)
+            allReviews = Review.objects.filter(feed=feed)
+            allUserFeeds = userFeed.objects.filter(feed=feed)
+            likes = allUserFeeds.filter(response='L').count()
+            dislikes = allUserFeeds.filter(response='D').count()
+            feed.likes = likes
+            feed.dislikes = dislikes
+            feed.allReviews = allReviews
+            serializer = self.get_serializer(instance=feed)
             return Response(data=serializer.data ,status=status.HTTP_200_OK)
         except:
             return Response({"message": "Get Feed Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
@@ -29,7 +43,7 @@ class FeedDetailView(generics.GenericAPIView):
     # Update Feed By Id
     def put(self, request, feedId):
         feed = get_object_or_404(Feed, pk=feedId)
-        serializer = self.serializer_class(instance=feed, data=request.data)
+        serializer = self.get_serializer(instance=feed, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(updatedAt=timezone.now())
         return Response({"message": "Update Feed Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
@@ -59,7 +73,16 @@ class FeedListAndCreateView(generics.ListCreateAPIView):
 
     # Get All Feeds
     def get_queryset(self):
-        return Feed.objects.filter()
+        allFeeds = Feed.objects.filter()
+        for feed in allFeeds:
+            allUserFeeds = userFeed.objects.filter(feed=feed)
+            reviewers = Review.objects.filter(feed=feed).count()
+            likes = allUserFeeds.filter(response='L').count()
+            dislikes = allUserFeeds.filter(response='D').count()
+            feed.likes = likes
+            feed.dislikes = dislikes
+            feed.reviewers = reviewers
+        return allFeeds
 
     def post(self, request):
         user = request.user
