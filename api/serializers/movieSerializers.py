@@ -16,6 +16,22 @@ class MovieDetailSerializer(serializers.ModelSerializer):
             'id': {'read_only': True},
         }
 
+
+"""
+Serializer class for Movie Profile (include rating, likes, dislikes)
+"""
+class MovieProfileSerializer(serializers.ModelSerializer):
+    rating = serializers.FloatField()
+    likes = serializers.IntegerField()
+    dislikes = serializers.IntegerField()
+    class Meta:
+        model = Movie
+        fields = ['id', 'title', 'description', 'img', 'thumbnail', 'director', 'actor', 'year', 'category', 'rating', 'likes', 'dislikes']
+        extra_kwargs = {
+            'id': {'read_only': True},
+        }
+
+
 """
 Serializer class for Creating Movie
 """
@@ -32,6 +48,9 @@ class MovieCreateSerializer(serializers.ModelSerializer):
 Serializer class for Listing Movies
 """
 class ListMovieSerializer(serializers.ModelSerializer):
+    rating = serializers.FloatField()
+    likes = serializers.IntegerField()
+    dislikes = serializers.IntegerField()
     class Meta:
         model = Movie
-        fields = ['id', 'title', 'description', 'thumbnail', 'director']
+        fields = ['id', 'title', 'description', 'thumbnail', 'director', 'rating', 'likes', 'dislikes']

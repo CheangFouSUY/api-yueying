@@ -22,6 +22,8 @@ class GroupDetailView(generics.GenericAPIView):
         try:
             group = get_object_or_404(Group, pk=groupId)
             serializer = self.serializer_class(instance=group)
+            allMember = userGroup.objects.filter(group=groupId)
+            member_cnt = allMember.count();
             return Response(data=serializer.data ,status=status.HTTP_200_OK)
         except:
             return Response({"message": "Get Group Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
@@ -68,3 +70,6 @@ class GroupListAndCreateView(generics.ListCreateAPIView):
         serializer.save(createdBy=user)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+

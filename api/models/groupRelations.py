@@ -7,6 +7,6 @@ class groupFeed(models.Model):
     group = models.ForeignKey("Group", on_delete=models.CASCADE, null=False, blank=False)
     isPin = models.BooleanField(default=False)
     isFeatured = models.BooleanField(default=False)
-    #isNormal = models.BooleanField(default=True)
+    isNormal = models.BooleanField(default=True)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
