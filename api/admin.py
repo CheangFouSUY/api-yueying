@@ -55,6 +55,9 @@ class UserGroupAdminConfig(admin.ModelAdmin):
 class GroupFeedAdminConfig(admin.ModelAdmin):
     list_display = ('feed', 'group', 'isPin', 'isFeatured')
 
+class GroupAdminApplyConfig(admin.ModelAdmin):
+    list_display = ('user','group','result')
+
 
 admin.site.register(CustomUser, UserAdminConfig)
 admin.site.register(Book, BookAdminConfig)
@@ -70,3 +73,4 @@ admin.site.register(userFeed, UserFeedAdminConfig)
 admin.site.register(userReview, UserReviewAdminConfig)
 admin.site.register(userGroup, UserGroupAdminConfig)
 admin.site.register(groupFeed, GroupFeedAdminConfig)
+admin.site.register(groupAdminApply,GroupAdminApplyConfig)

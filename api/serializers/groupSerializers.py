@@ -18,10 +18,10 @@ class GroupDetailSerializer(serializers.ModelSerializer):
 
 #include member
 class GroupProfileSerializer(serializers.ModelSerializer):
-    member_cnt = serializers.IntegerField()
+    members = serializers.IntegerField()
     class Meta:
         model = Group
-        fields = ['id', 'groupName', 'description', 'category', 'createdBy','member_cnt']
+        fields = ['id', 'groupName', 'description', 'category', 'createdBy', 'member_cnt']
         extra_kwargs = {
             'id': {'read_only': True},
             'createdBy': {'read_only': True},
@@ -46,9 +46,10 @@ class GroupCreateSerializer(serializers.ModelSerializer):
 Serializer class for Listing Groups
 """
 class ListGroupSerializer(serializers.ModelSerializer):
+    members = serializers.IntegerField()
     class Meta:
         model = Group
-        fields = ['id', 'groupName', 'description', 'category', 'createdBy']
+        fields = ['id', 'groupName', 'description', 'category', 'createdBy', 'members']
 
 
 

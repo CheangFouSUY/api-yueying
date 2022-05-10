@@ -68,5 +68,8 @@ class userGroup(models.Model):
     isBanned = models.BooleanField(default=False)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
-    banDue = models.DateTimeField(default=timezone.now)
+    banDue = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('group','user')
 

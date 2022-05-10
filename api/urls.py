@@ -42,8 +42,22 @@ urlpatterns = [
     path('movie/', MovieListAndCreateView.as_view(), name="movie_list_and_create"),
 
     # Groups Path
+        # GET: get a group detail by groupId
     path('group/<uuid:groupId>', GroupDetailView.as_view(), name="group_detail"),
+        # GET:list all group ; POST:create group
     path('group/', GroupListAndCreateView.as_view(), name="group_list_and_create"),
+        # POST : join group
+    path('group/join/<uuid:groupId>', joinGroupView.as_view(), name="join_group"),
+        # GET:list all feed ; POST:create feed in group
+    path('group/feed/<uuid:groupId>',GroupFeedListAndCreateView.as_view(),name="groupFeed_list_and_create"),
+        # POST : apply to become group admin
+    path('group/admin/<uuid:groupId>',GroupAdminApplyView.as_view(),name="group_admin_apply"),
+        # PUT : set pinned feed
+    path('group/pinFeed/<uuid:groupId>/<uuid:feedId>',PinnedFeedView.as_view(),name="group_feed_pin"),
+        # PUT : set group admin
+    path('group/setAdmin/<uuid:groupId>/<uuid:userId>',AdminSetView.as_view(),name="group_admin_set"),
+
+
 
     # Feed Path
     path('feed/<uuid:feedId>', FeedDetailView.as_view(), name="feed_detail"),
