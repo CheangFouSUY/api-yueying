@@ -4,10 +4,11 @@ from rest_framework import generics, status, views, permissions
 from django.utils import timezone
 
 from ..serializers.feedSerializers import *
+from ..serializers.userRelationsSerializers import userFeedDetailSerializer
 from ..utils import *
 from ..models.feeds import Feed
 from ..models.reviews import Review
-from ..models.userRelations import *
+from ..models.userRelations import userFeed
 
 
 """ For Admin(superuser)
@@ -91,3 +92,32 @@ class FeedListAndCreateView(generics.ListCreateAPIView):
         serializer.save(createdBy=user, isPublic=True)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+"""
+PUT: userFeed relation, uses for response and follow
+"""
+class FeedReactionView(generics.GenericAPIView):
+    serializer_class = userFeedDetailSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def put(self, request, feedId):
+        feed = get_object_or_404(Feed, pk=feedId)
+        try:
+            tmpUserFeed = userFeed.objects.get(feed=feedId, user=request.user)  # get one
+        except userFeed.DoesNotExist:
+            tmpUserFeed = None
+        if tmpUserFeed:
+            """
+                instance take one, but filter return list, so need to specify index.
+                instead, use objects.get to get a single instance
+            """
+            serializer = self.get_serializer(instance=tmpUserFeed, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(feed=feed, user=request.user, updatedAt=timezone.now())
+            return Response({"message": "Update userFeed Successfully"}, status=status.HTTP_200_OK)
+        else:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(feed=feed, user=request.user)
+            return Response({"message": "Add userFeed Successfully"}, status=status.HTTP_201_CREATED)

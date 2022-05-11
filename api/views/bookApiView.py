@@ -5,10 +5,10 @@ from rest_framework.response import Response
 from rest_framework import generics, status, views, permissions
 
 from ..serializers.bookSerializers import *
-from ..serializers.userRelationsSerializers import *
+from ..serializers.userRelationsSerializers import userBookDetailSerializer
 from ..utils import *
 from ..models.books import Book
-from ..models.userRelations import *
+from ..models.userRelations import userBook
 
 
 """ For Admin(superuser)
@@ -103,7 +103,10 @@ class BookReactionView(generics.GenericAPIView):
 
     def put(self, request, bookId):
         book = get_object_or_404(Book, pk=bookId)
-        tmpUserBook = userBook.objects.get(book=bookId, user=request.user)  # get one
+        try:
+            tmpUserBook = userBook.objects.get(book=bookId, user=request.user)  # get one
+        except userBook.DoesNotExist:
+            tmpUserBook = None
         rateScore = int(request.data['rateScore'])  # by default, it's a str
         isRated = True if rateScore > 0 else False
         if tmpUserBook:
@@ -119,4 +122,4 @@ class BookReactionView(generics.GenericAPIView):
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(book=book, user=request.user, isRated=isRated)
-            return Response({"message": "Add userBook Successfully"}, status=status.HTTP_200_OK)
+            return Response({"message": "Add userBook Successfully"}, status=status.HTTP_201_CREATED)

@@ -3,16 +3,18 @@ from rest_framework.response import Response
 from rest_framework import generics, status, views, permissions
 from django.utils import timezone
 
+
 from ..serializers.reviewSerializers import *
+from ..serializers.userRelationsSerializers import userReviewDetailSerializer
 from ..utils import *
 from ..models.reviews import Review
 from ..models.userRelations import *
 
 
 """ For Admin(superuser)
-GET: Get Feed Detail By Id  # for any
-PUT: Update Feed By Id      # for superuser or owner
-DELETE: Delete Feed By Id (set isDelete = True)     # for superuser or owner
+GET: Get Review Detail By Id  # for any
+PUT: Update Review By Id      # for superuser or owner
+DELETE: Delete Review By Id (set isDelete = True)     # for superuser or owner
 """
 class ReviewDetailView(generics.GenericAPIView):
     serializer_class = ReviewDetailSerializer
@@ -87,3 +89,33 @@ class ReviewListAndCreateView(generics.ListCreateAPIView):
         serializer.save(createdBy=user)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+
+"""
+PUT: userReview relation, uses for response
+"""
+class ReviewReactionView(generics.GenericAPIView):
+    serializer_class = userReviewDetailSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def put(self, request, reviewId):
+        review = get_object_or_404(Review, pk=reviewId)
+        try:
+            tmpUserReview = userReview.objects.get(review=reviewId, user=request.user)  # get one
+        except userReview.DoesNotExist:
+            tmpUserReview = None
+        if tmpUserReview:
+            """
+                instance take one, but filter return list, so need to specify index.
+                instead, use objects.get to get a single instance
+            """
+            serializer = self.get_serializer(instance=tmpUserReview, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(review=review, user=request.user, updatedAt=timezone.now())
+            return Response({"message": "Update userReview Successfully"}, status=status.HTTP_200_OK)
+        else:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(review=review, user=request.user)
+            return Response({"message": "Add userReview Successfully"}, status=status.HTTP_201_CREATED)

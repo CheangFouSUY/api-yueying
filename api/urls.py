@@ -41,6 +41,7 @@ urlpatterns = [
     # Movies Path
     path('movie/<uuid:movieId>', MovieDetailView.as_view(), name="movie_detail"),
     path('movie/', MovieListAndCreateView.as_view(), name="movie_list_and_create"),
+    path('movie/react/<uuid:movieId>', MovieReactionView.as_view(), name="movie_reaction"),
 
     # Groups Path
     path('group/<uuid:groupId>', GroupDetailView.as_view(), name="group_detail"),
@@ -49,10 +50,12 @@ urlpatterns = [
     # Feed Path
     path('feed/<uuid:feedId>', FeedDetailView.as_view(), name="feed_detail"),
     path('feed/', FeedListAndCreateView.as_view(), name="feed_list_and_create"),
+    path('feed/react/<uuid:feedId>', FeedReactionView.as_view(), name="feed_reaction"),
 
     # Review Path
     path('review/<uuid:reviewId>', ReviewDetailView.as_view(), name="review_detail"),
     path('review/', ReviewListAndCreateView.as_view(), name="review_list_and_create"),
+    path('review/react/<uuid:reviewId>', ReviewReactionView.as_view(), name="feed_reaction"),
 
     #Report Path
     path('report/<uuid:reportId>', ReportDetailView.as_view(), name="report_detail"),
