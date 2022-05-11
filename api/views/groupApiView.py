@@ -1,3 +1,4 @@
+import operator
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.response import Response
@@ -6,6 +7,7 @@ from rest_framework import generics, status, views, permissions
 from ..serializers.groupSerializers import *
 from ..serializers.groupRelationsSerializers import *
 from ..serializers.feedSerializers import *
+from ..serializers.userSerializers import *
 from ..utils import *
 from ..models.groups import Group
 from ..models.userRelations import *
@@ -32,7 +34,7 @@ class GroupDetailView(generics.GenericAPIView):
         try:
             group = get_object_or_404(Group, pk=groupId)
             members = userGroup.objects.filter(group=groupId).count()
-            group.members = members;
+            group.members = members
             serializer = self.serializer_class(instance=group)
             return Response(data=serializer.data ,status=status.HTTP_200_OK)
 
@@ -50,11 +52,11 @@ class GroupDetailView(generics.GenericAPIView):
     # Delete Group By Id
     def delete(self, request, groupId):
         try:
-            group = get_object_or_404(Group, pk=groupId)
+            group = get_object_or_404(Group, pk=groupId,createdBy=request.user)
             group.delete()
             return Response({"message": "Delete Group Successfully"}, status=status.HTTP_200_OK)
         except:
-            return Response({"message": "Delete Group Failed"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Delete Group Failed,Probably Not Group Creator"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 """
@@ -76,7 +78,7 @@ class GroupListAndCreateView(generics.ListCreateAPIView):
         allGroups = Group.objects.filter()
         for group in allGroups:
             members = userGroup.objects.filter(group=group).count()
-            group.members = members;
+            group.members = members
         return allGroups
 
     def post(self, request):
@@ -92,9 +94,9 @@ class GroupListAndCreateView(generics.ListCreateAPIView):
         return Response(serializer.data,status=status.HTTP_201_CREATED)
 
 '''
-Join group
+Join and leave group
 '''
-class joinGroupView(generics.GenericAPIView):
+class JoinLeaveGroupView(generics.GenericAPIView):
     serializer_class = UserGroupJoinSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
@@ -107,8 +109,17 @@ class joinGroupView(generics.GenericAPIView):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    def delete(self, request, groupId):
+        try:
+            record = get_object_or_404(userGroup,group=groupId,user=request.user)
+            record.delete()
+            return Response({"message": "Leave Group Successfully"}, status=status.HTTP_200_OK)
+        except:
+            return Response({"message": "Leave Group Failed,Probably Not Group Member"}, status=status.HTTP_400_BAD_REQUEST)
+
+
 '''
-GET: list feed 
+GET: list feed (didn't separate pin/featured and normal)
 POST: Create Feed in Group
 '''
 
@@ -155,23 +166,18 @@ class GroupAdminApplyView(generics.ListCreateAPIView):
     # permission_classes = [permissions.IsGroupMember]  # need to modify permission，message of invalid permisson is define in permission.py
 
     def post(self,request,groupId):
-        user = request.user
-        group = get_object_or_404(Group, pk=groupId)
-        '''
-        isMember = userGroup.objects.filter(user = user)
-        if not isMember:
-            return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
-        '''
-        data = {'user':user.id,'group':group.id}
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(user=user,group=group)
+        try:
+            user = request.user
+            isMember = get_object_or_404(userGroup, group=groupId, user=user)
+            data = {'user':user.id,'group':groupId}
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({"message": "Apply Group Admin Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+        except:
+            return Response({"message": "Apply group admin Failed,Probably Not Group Member"},status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-
-''' For Group Admin'''
+############################## For Group Admin ##################################
 
 '''
 Set group admin -- admin and creator
@@ -230,8 +236,7 @@ class PinnedFeedView(generics.GenericAPIView):
                 serializer = self.serializer_class(instance=isfeed,data={'isPin':True})
                 serializer.is_valid(raise_exception=True)
                 serializer.save(updatedAt=timezone.now())
-
-            return Response({"message": "Pinned Feed Successfully", "data": serializer.data},status=status.HTTP_200_OK)
+                return Response({"message": "Pinned Feed Successfully", "data": serializer.data},status=status.HTTP_200_OK)
         else:
             return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -249,8 +254,7 @@ class UnpinFeedView(generics.GenericAPIView):
                 serializer = self.serializer_class(instance=isfeed,data={'isPin':False})
                 serializer.is_valid(raise_exception=True)
                 serializer.save(updatedAt=timezone.now())
-
-            return Response({"message": "Unpin Feed Successfully", "data": serializer.data},status=status.HTTP_200_OK)
+                return Response({"message": "Unpin Feed Successfully", "data": serializer.data},status=status.HTTP_200_OK)
         else:
             return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -272,8 +276,7 @@ class FeaturedFeedView(generics.GenericAPIView):
                 serializer = self.serializer_class(instance=isfeed,data={'isFeatured':True})
                 serializer.is_valid(raise_exception=True)
                 serializer.save(updatedAt=timezone.now())
-
-            return Response({"message": "Make Feed Featured Successfully", "data": serializer.data},status=status.HTTP_200_OK)
+                return Response({"message": "Make Feed Featured Successfully", "data": serializer.data},status=status.HTTP_200_OK)
         else:
             return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -291,8 +294,7 @@ class UnfeaturedFeedView(generics.GenericAPIView):
                 serializer = self.serializer_class(instance=isfeed,data={'isFeatured':False})
                 serializer.is_valid(raise_exception=True)
                 serializer.save(updatedAt=timezone.now())
-
-            return Response({"message": "Unfeatured Feed Successfully", "data": serializer.data},status=status.HTTP_200_OK)
+                return Response({"message": "Unfeatured Feed Successfully", "data": serializer.data},status=status.HTTP_200_OK)
         else:
             return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -337,3 +339,51 @@ class GroupMemberBanView(generics.GenericAPIView):
             return Response({"message": "Ban Member Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
         else:
             return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
+
+
+################## Show ##################
+'''
+Sort by category in descending order
+'''
+class GroupbyCategoryView(generics.ListCreateAPIView):
+    serializer_class = ListGroupSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        type = self.kwargs['category']
+        allGroups = Group.objects.filter(category=type)
+        for group in allGroups:
+            members = userGroup.objects.filter(group=group).count()
+            group.members = members
+        ordered = sorted(allGroups, key=operator.attrgetter('members'),reverse=True)
+        return ordered
+
+'''
+Show group join by user
+'''
+class ShowUserGroupView(generics.ListCreateAPIView):
+    serializer_class = ListGroupSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        allGroups = Group.objects.filter(usergroup__user=self.request.user)
+        for group in allGroups:
+            members = userGroup.objects.filter(group=group).count()
+            group.members = members
+        ordered = sorted(allGroups, key=operator.attrgetter('members'), reverse=True)
+        return ordered
+
+
+'''
+Show all group member(no ordering)
+'''
+class ShowGroupMemberView(generics.ListCreateAPIView):
+    serializer_class = ListUserSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        allMember = CustomUser.objects.filter(usergroup__group=self.kwargs['groupId'])
+        return allMember
+
+
+

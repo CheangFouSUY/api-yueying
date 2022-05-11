@@ -21,7 +21,7 @@ class GroupProfileSerializer(serializers.ModelSerializer):
     members = serializers.IntegerField()
     class Meta:
         model = Group
-        fields = ['id', 'groupName', 'description', 'category', 'createdBy', 'member_cnt']
+        fields = ['id', 'groupName', 'description', 'category', 'createdBy', 'members']
         extra_kwargs = {
             'id': {'read_only': True},
             'createdBy': {'read_only': True},
