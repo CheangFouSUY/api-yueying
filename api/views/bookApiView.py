@@ -5,9 +5,10 @@ from rest_framework.response import Response
 from rest_framework import generics, status, views, permissions
 
 from ..serializers.bookSerializers import *
+from ..serializers.userRelationsSerializers import userBookDetailSerializer
 from ..utils import *
 from ..models.books import Book
-from ..models.userRelations import *
+from ..models.userRelations import userBook
 
 
 """ For Admin(superuser)
@@ -91,3 +92,34 @@ class BookListAndCreateView(generics.ListCreateAPIView):
         serializer.save()
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+"""
+PUT: userBook relation, uses for response and bookmark
+"""
+class BookReactionView(generics.GenericAPIView):
+    serializer_class = userBookDetailSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def put(self, request, bookId):
+        book = get_object_or_404(Book, pk=bookId)
+        try:
+            tmpUserBook = userBook.objects.get(book=bookId, user=request.user)  # get one
+        except userBook.DoesNotExist:
+            tmpUserBook = None
+        rateScore = int(request.data['rateScore'])  # by default, it's a str
+        isRated = True if rateScore > 0 else False
+        if tmpUserBook:
+            """
+                instance take one, but filter return list, so need to specify index.
+                instead, use objects.get to get a single instance
+            """
+            serializer = self.get_serializer(instance=tmpUserBook, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(book=book, user=request.user, isRated=isRated, updatedAt=timezone.now())
+            return Response({"message": "Update userBook Successfully"}, status=status.HTTP_200_OK)
+        else:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(book=book, user=request.user, isRated=isRated)
+            return Response({"message": "Add userBook Successfully"}, status=status.HTTP_201_CREATED)

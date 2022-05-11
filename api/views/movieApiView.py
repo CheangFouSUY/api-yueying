@@ -6,9 +6,10 @@ from rest_framework import generics, status, views, permissions
 
 
 from ..serializers.movieSerializers import *
+from ..serializers.userRelationsSerializers import userMovieDetailSerializer
 from ..utils import *
 from ..models.movies import Movie
-from ..models.userRelations import *
+from ..models.userRelations import userMovie
 
 
 """ For Admin(superuser)
@@ -92,3 +93,34 @@ class MovieListAndCreateView(generics.ListCreateAPIView):
         serializer.save()
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+"""
+PUT: userMovie relation, uses for response and save
+"""
+class MovieReactionView(generics.GenericAPIView):
+    serializer_class = userMovieDetailSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def put(self, request, movieId):
+        movie = get_object_or_404(Movie, pk=movieId)
+        try:
+            tmpUserMovie = userMovie.objects.get(movie=movieId, user=request.user)  # get one
+        except userMovie.DoesNotExist:
+            tmpUserMovie = None
+        rateScore = int(request.data['rateScore'])  # by default, it's a str
+        isRated = True if rateScore > 0 else False
+        if tmpUserMovie:
+            """
+                instance take one, but filter return list, so need to specify index.
+                instead, use objects.get to get a single instance
+            """
+            serializer = self.get_serializer(instance=tmpUserMovie, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(movie=movie, user=request.user, isRated=isRated, updatedAt=timezone.now())
+            return Response({"message": "Update userMovie Successfully"}, status=status.HTTP_200_OK)
+        else:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(movie=movie, user=request.user, isRated=isRated)
+            return Response({"message": "Add userMovie Successfully"}, status=status.HTTP_201_CREATED)
