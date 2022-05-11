@@ -9,6 +9,7 @@ import jwt
 from ..serializers.userSerializers import *
 from ..utils import get_tokens, send_smtp
 from ..models.users import CustomUser
+from ..models.userRelations import *
 
 """
 POST: Register
@@ -46,7 +47,8 @@ class UserActivateView(views.APIView):
             user = CustomUser.objects.get(id=payload['user_id'])
             if not user.is_active:
                 user.is_active = True
-                #user.save(updatedAt=timezone.now())
+                user.updatedAt = timezone.now()
+                user.save()
             return Response({"message": "Activate Account Successfully!"}, status=status.HTTP_200_OK)
         except jwt.ExpiredSignatureError:
             return Response({"error": "Activation Code Expire"}, status=status.HTTP_400_BAD_REQUEST)
@@ -173,10 +175,22 @@ class UserDetailView(generics.GenericAPIView):
     serializer_class = UserDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    def get_serializer_class(self):
+        if self.request.method in ['GET']:
+            return UserProfileSerializer
+        return UserDetailSerializer
+
+
     def get(self, request, userId):
         try:
             user = CustomUser.objects.get(pk=userId)
-            serializer=self.serializer_class(instance=user)
+            books = userBook.objects.filter(user=user, isSaved=True)
+            movies = userMovie.objects.filter(user=user, isSaved=True)
+            feeds = userFeed.objects.filter(user=user, isFollowed=True)
+            user.books = books;
+            user.movies = movies;
+            user.feeds = feeds;
+            serializer=self.get_serializer(instance=user)
             return Response(data=serializer.data ,status=status.HTTP_200_OK)
         except:
             return Response({"message": "Get User Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
@@ -184,7 +198,7 @@ class UserDetailView(generics.GenericAPIView):
     def put(self, request, userId):
         try:
             user = get_object_or_404(CustomUser, pk=userId)
-            serializer = self.serializer_class(instance=user, data=request.data)
+            serializer = self.get_serializer(instance=user, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(updatedAt=timezone.now())
             return Response({"message": "Update User Successfully"}, status=status.HTTP_200_OK)

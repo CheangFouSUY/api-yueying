@@ -42,8 +42,40 @@ urlpatterns = [
     path('movie/', MovieListAndCreateView.as_view(), name="movie_list_and_create"),
 
     # Groups Path
+        # GET: get a group detail by groupId
     path('group/<uuid:groupId>', GroupDetailView.as_view(), name="group_detail"),
+        # GET:list all group ; POST:create group
     path('group/', GroupListAndCreateView.as_view(), name="group_list_and_create"),
+        # POST : join group ; DELETE:leave group
+    path('group/joinleave/<uuid:groupId>', JoinLeaveGroupView.as_view(), name="join_leave_group"),
+        # GET:list all feed ; POST:create feed in group
+    path('group/feed/<uuid:groupId>',GroupFeedListAndCreateView.as_view(),name="groupFeed_list_and_create"),
+        # POST : apply to become group admin
+    path('group/admin/<uuid:groupId>',GroupAdminApplyView.as_view(),name="group_admin_apply"),
+        # PUT : set group admin
+    path('group/setAdmin/<uuid:groupId>/<uuid:userId>',AdminSetView.as_view(),name="group_admin_set"),
+        # PUT : remove group admin
+    path('group/deleteAdmin/<uuid:groupId>/<uuid:userId>',AdminDeleteView.as_view(),name="group_admin_remove"),
+        # PUT : set pinned feed
+    path('group/pinFeed/<uuid:groupId>/<uuid:feedId>',PinnedFeedView.as_view(),name="group_feed_pin"),
+    path('group/unpinFeed/<uuid:groupId>/<uuid:feedId>',UnpinFeedView.as_view(),name="group_feed_unpin"),
+        # PUT : set pinned feed
+    path('group/featuredFeed/<uuid:groupId>/<uuid:feedId>',FeaturedFeedView.as_view(),name="group_feed_featured"),
+    path('group/unfeaturedFeed/<uuid:groupId>/<uuid:feedId>',UnfeaturedFeedView.as_view(),name="group_feed_unfeatured"),
+        # DELETE : Delete group feed
+    path('group/delGFeed/<uuid:groupId>/<uuid:feedId>',GroupFeedDeleteView.as_view(),name="group_feed_delete"),
+        # PUT : Ban Member
+    path('group/banMember/<uuid:groupId>/<uuid:userId>',GroupMemberBanView.as_view(),name="group_member_ban"),
+        # GET : Show group user had joined
+    path('group/joined',ShowUserGroupView.as_view(),name="group_user_join_list"),
+        # GET : Sort by category
+    path('group/category/<str:category>',GroupbyCategoryView.as_view(),name="group_category_list"),
+        # GET : Show all group member
+    path('group/members/<uuid:groupId>',ShowGroupMemberView.as_view(),name="group_member_list"),
+
+
+
+
 
     # Feed Path
     path('feed/<uuid:feedId>', FeedDetailView.as_view(), name="feed_detail"),

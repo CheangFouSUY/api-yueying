@@ -10,8 +10,10 @@ class userBook(models.Model):
     )
     book = models.ForeignKey("Book", on_delete=models.CASCADE, null=False, blank=False)
     user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
-    response = models.CharField(choices=CHOICE,null=False, blank=False,default='O')
+    response = models.CharField(choices=CHOICE, max_length=10, null=False, blank=False,default='O')
     isSaved = models.BooleanField(default=False)
+    isRated = models.BooleanField(default=False)
+    rateScore = models.IntegerField(default=-1)     # socre effective when > 0
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
 
@@ -24,8 +26,10 @@ class userMovie(models.Model):
     )
     movie = models.ForeignKey("Movie", on_delete=models.CASCADE, null=False, blank=False)
     user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
-    response = models.CharField(choices=CHOICE,null=False, blank=False,default='O')
+    response = models.CharField(choices=CHOICE, max_length=10, null=False, blank=False,default='O')
     isSaved = models.BooleanField(default=False)
+    isRated = models.BooleanField(default=False)
+    rateScore = models.IntegerField(default=-1)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
 
@@ -38,7 +42,7 @@ class userFeed(models.Model):
     )
     feed = models.ForeignKey("Feed", on_delete=models.CASCADE, null=False, blank=False)
     user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
-    response = models.CharField(choices=CHOICE,null=False, blank=False,default='O')
+    response = models.CharField(choices=CHOICE, max_length=10, null=False, blank=False,default='O')
     isFollowed = models.BooleanField(default=False)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
@@ -50,9 +54,9 @@ class userReview(models.Model):
         ('L', 'Like'),
         ('D', 'Dislike'),
     )
-    review = models.ForeignKey("Feed", on_delete=models.CASCADE, null=False, blank=False)
+    review = models.ForeignKey("Review", on_delete=models.CASCADE, null=False, blank=False)
     user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
-    response = models.CharField(choices=CHOICE,null=False, blank=False,default='O')
+    response = models.CharField(choices=CHOICE, max_length=10, null=False, blank=False,default='O')
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
 
@@ -64,4 +68,8 @@ class userGroup(models.Model):
     isBanned = models.BooleanField(default=False)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
+    banDue = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('group','user')
 
