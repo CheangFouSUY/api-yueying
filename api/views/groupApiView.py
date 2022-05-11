@@ -85,7 +85,11 @@ class GroupListAndCreateView(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save(createdBy=user)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        group = get_object_or_404(Group, pk=serializer.data["id"])
+        usergroup = userGroup(group=group, user=request.user,isAdmin=True)
+        usergroup.save()
+
+        return Response(serializer.data,status=status.HTTP_201_CREATED)
 
 '''
 Join group
@@ -142,7 +146,7 @@ class GroupFeedListAndCreateView(generics.ListCreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 '''
-Apply group admin
+Apply group admin 
 '''
 
 class GroupAdminApplyView(generics.ListCreateAPIView):
@@ -156,7 +160,7 @@ class GroupAdminApplyView(generics.ListCreateAPIView):
         '''
         isMember = userGroup.objects.filter(user = user)
         if not isMember:
-            return Response({"message": "Not a group member."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
         '''
         data = {'user':user.id,'group':group.id}
         serializer = self.get_serializer(data=data)
@@ -166,10 +170,11 @@ class GroupAdminApplyView(generics.ListCreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+
 ''' For Group Admin'''
 
 '''
-Set group admin
+Set group admin -- admin and creator
 '''
 class AdminSetView(generics.GenericAPIView):
     serializer_class = UserGroupDetailSerializer
@@ -186,10 +191,30 @@ class AdminSetView(generics.GenericAPIView):
             serializer.save(isAdmin=True,updatedAt=timezone.now())
             return Response({"message": "Set Admin Successfully", "data": serializer.data},status=status.HTTP_200_OK)
         else:
-            return Response({"message": "Not group admin."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
 
 '''
-Set feed as pinned
+Delete group admin -- only group creator
+'''
+class AdminDeleteView(generics.GenericAPIView):
+    serializer_class = UserGroupDetailSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    # permission_classes = [permissions.IsGroupCreator]  # need to modify permission
+
+    def put(self,request,groupId,userId):
+        isCreator = Group.objects.filter(pk=groupId, createdBy=request.user)
+
+        if isCreator:
+            userDelete = get_object_or_404(userGroup, group=groupId, user=userId,isAdmin=True)
+            serializer = self.serializer_class(instance=userDelete,data={'isAdmin':False})
+            serializer.is_valid(raise_exception=True)
+            serializer.save(updatedAt=timezone.now())
+            return Response({"message": "Delete Admin Successfully", "data": serializer.data},status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
+
+'''
+Set feed as pinned and unpin
 '''
 class PinnedFeedView(generics.GenericAPIView):
     serializer_class = GroupFeedDetailSerializer
@@ -201,15 +226,114 @@ class PinnedFeedView(generics.GenericAPIView):
 
         if userAdmin.isAdmin:
             isfeed = get_object_or_404(groupFeed, group=groupId, feed=feedId)
-            serializer = self.serializer_class(instance=isfeed,data={'isPin':True})
-            serializer.is_valid(raise_exception=True)
-            serializer.save(isPin=True,isNormal=False,updatedAt=timezone.now())
+            if not isfeed.isPin:
+                serializer = self.serializer_class(instance=isfeed,data={'isPin':True})
+                serializer.is_valid(raise_exception=True)
+                serializer.save(updatedAt=timezone.now())
 
             return Response({"message": "Pinned Feed Successfully", "data": serializer.data},status=status.HTTP_200_OK)
         else:
-            return Response({"message": "Not group admin."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
+
+class UnpinFeedView(generics.GenericAPIView):
+    serializer_class = GroupFeedDetailSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    # permission_classes = [permissions.IsGroupAdmin]  # need to modify permission，message of invalid permisson is define in permission.py
+
+    def put(self,request,groupId,feedId):
+        userAdmin = get_object_or_404(userGroup, group=groupId,user=request.user)
+
+        if userAdmin.isAdmin:
+            isfeed = get_object_or_404(groupFeed, group=groupId, feed=feedId)
+            if isfeed.isPin:
+                serializer = self.serializer_class(instance=isfeed,data={'isPin':False})
+                serializer.is_valid(raise_exception=True)
+                serializer.save(updatedAt=timezone.now())
+
+            return Response({"message": "Unpin Feed Successfully", "data": serializer.data},status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
 
 
+'''
+Set feed as featured and unfeatured
+'''
+class FeaturedFeedView(generics.GenericAPIView):
+    serializer_class = GroupFeedDetailSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    # permission_classes = [permissions.IsGroupAdmin]  # need to modify permission，message of invalid permisson is define in permission.py
 
+    def put(self,request,groupId,feedId):
+        userAdmin = get_object_or_404(userGroup, group=groupId,user=request.user)
 
+        if userAdmin.isAdmin:
+            isfeed = get_object_or_404(groupFeed, group=groupId, feed=feedId)
+            if not isfeed.isFeatured:
+                serializer = self.serializer_class(instance=isfeed,data={'isFeatured':True})
+                serializer.is_valid(raise_exception=True)
+                serializer.save(updatedAt=timezone.now())
 
+            return Response({"message": "Make Feed Featured Successfully", "data": serializer.data},status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
+
+class UnfeaturedFeedView(generics.GenericAPIView):
+    serializer_class = GroupFeedDetailSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    # permission_classes = [permissions.IsGroupAdmin]  # need to modify permission，message of invalid permisson is define in permission.py
+
+    def put(self,request,groupId,feedId):
+        userAdmin = get_object_or_404(userGroup, group=groupId,user=request.user)
+
+        if userAdmin.isAdmin:
+            isfeed = get_object_or_404(groupFeed, group=groupId, feed=feedId)
+            if isfeed.isFeatured:
+                serializer = self.serializer_class(instance=isfeed,data={'isFeatured':False})
+                serializer.is_valid(raise_exception=True)
+                serializer.save(updatedAt=timezone.now())
+
+            return Response({"message": "Unfeatured Feed Successfully", "data": serializer.data},status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
+
+'''
+Delete group feed
+'''
+class GroupFeedDeleteView(generics.GenericAPIView):
+    serializer_class = GroupFeedDetailSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    # permission_classes = [permissions.IsGroupAdmin]  # need to modify permission，message of invalid permisson is define in permission.py
+
+    # Delete Group Feed By Id
+    def delete(self, request, groupId, feedId):
+        userAdmin = get_object_or_404(userGroup, group=groupId, user=request.user)
+        if userAdmin.isAdmin:
+            try:
+                isgroupfeed = get_object_or_404(groupFeed, group=groupId, feed=feedId)
+                feed = get_object_or_404(Feed, pk=feedId)
+                isgroupfeed.delete()
+                feed.delete()
+                return Response({"message": "Delete Group Feed Successfully"}, status=status.HTTP_200_OK)
+            except:
+                return Response({"message": "Delete Group Feed Failed"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
+
+'''
+Banned Member
+'''
+class GroupMemberBanView(generics.GenericAPIView):
+    serializer_class = UserGroupDetailSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    # permission_classes = [permissions.IsGroupAdmin]  # need to modify permission，message of invalid permisson is define in permission.py
+
+    def put(self,request,groupId,userId):
+        userAdmin = get_object_or_404(userGroup, group=groupId, user=request.user)
+        if userAdmin.isAdmin:
+            userBan = get_object_or_404(userGroup, group=groupId, user=userId)
+            serializer = self.serializer_class(instance=userBan, data={'isBanned': True})
+            serializer.is_valid(raise_exception=True)
+            serializer.save(updatedAt=timezone.now(),banDue=timezone.now() + timezone.timedelta(days=7))
+            return Response({"message": "Ban Member Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)

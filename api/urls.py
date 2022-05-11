@@ -52,12 +52,20 @@ urlpatterns = [
     path('group/feed/<uuid:groupId>',GroupFeedListAndCreateView.as_view(),name="groupFeed_list_and_create"),
         # POST : apply to become group admin
     path('group/admin/<uuid:groupId>',GroupAdminApplyView.as_view(),name="group_admin_apply"),
-        # PUT : set pinned feed
-    path('group/pinFeed/<uuid:groupId>/<uuid:feedId>',PinnedFeedView.as_view(),name="group_feed_pin"),
         # PUT : set group admin
     path('group/setAdmin/<uuid:groupId>/<uuid:userId>',AdminSetView.as_view(),name="group_admin_set"),
-
-
+        # PUT : remove group admin
+    path('group/deleteAdmin/<uuid:groupId>/<uuid:userId>',AdminDeleteView.as_view(),name="group_admin_remove"),
+        # PUT : set pinned feed
+    path('group/pinFeed/<uuid:groupId>/<uuid:feedId>',PinnedFeedView.as_view(),name="group_feed_pin"),
+    path('group/unpinFeed/<uuid:groupId>/<uuid:feedId>',UnpinFeedView.as_view(),name="group_feed_unpin"),
+        # PUT : set pinned feed
+    path('group/featuredFeed/<uuid:groupId>/<uuid:feedId>',FeaturedFeedView.as_view(),name="group_feed_featured"),
+    path('group/unfeaturedFeed/<uuid:groupId>/<uuid:feedId>',UnfeaturedFeedView.as_view(),name="group_feed_unfeatured"),
+        # DELETE : Delete group feed
+    path('group/delGFeed/<uuid:groupId>/<uuid:feedId>',GroupFeedDeleteView.as_view(),name="group_feed_delete"),
+        # PUT : Ban Member
+    path('group/banMember/<uuid:groupId>/<uuid:userId>',GroupMemberBanView.as_view(),name="group_member_ban"),
 
     # Feed Path
     path('feed/<uuid:feedId>', FeedDetailView.as_view(), name="feed_detail"),
