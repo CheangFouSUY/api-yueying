@@ -7,7 +7,7 @@ from rest_framework import serializers, status
 from rest_framework.validators import ValidationError
 from ..utils import get_tokens
 from ..models.users import CustomUser
-
+from .userRelationsSerializers import userBookDetailSerializer, userFeedDetailSerializer, userMovieDetailSerializer
 """
 Serializer class for registering new user
 """
@@ -156,14 +156,27 @@ class LogoutSerializer(serializers.Serializer):
             raise AuthenticationFailed("Token Error. Might already be blacklisted.")
 
 """
-Serializer for User Detail
+Serializer for User Detail, Use for Update
 """
 class UserDetailSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = CustomUser
         # might need to have multiple models later on
         fields = ['id', 'email', 'username', 'firstName', 'lastName', 'about', 'gender', 'profile', 'dob']
+
+
+"""
+Serializer for User Profile, Use for Get Detail of User
+"""
+class UserProfileSerializer(serializers.ModelSerializer):
+    books = userBookDetailSerializer(many=True)
+    movies = userMovieDetailSerializer(many=True)
+    feeds = userFeedDetailSerializer(many=True)
+    class Meta:
+        model = CustomUser
+        # might need to have multiple models later on
+        fields = ['id', 'email', 'username', 'firstName', 'lastName', 'about', 'gender', 'profile', 'dob', 'books', 'movies', 'feeds']
+
 
 
 """

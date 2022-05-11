@@ -6,7 +6,6 @@ from ..models.books import Book
 """
 Serializer class for Book Detail
 """
-
 class BookDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
@@ -15,6 +14,21 @@ class BookDetailSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'id': {'read_only': True},
         }
+
+"""
+Serializer class for Book Profile (include rating, likes, dislikes)
+"""
+class BookProfileSerializer(serializers.ModelSerializer):
+    rating = serializers.FloatField()
+    likes = serializers.IntegerField()
+    dislikes = serializers.IntegerField()
+    class Meta:
+        model = Book
+        fields = ['id', 'isbn', 'title', 'description', 'img', 'thumbnail', 'author', 'publisher', 'year', 'category', 'rating', 'likes', 'dislikes']
+        extra_kwargs = {
+            'id': {'read_only': True},
+        }
+
 
 class BookCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -31,6 +45,9 @@ class BookCreateSerializer(serializers.ModelSerializer):
 
 
 class ListBookSerializer(serializers.ModelSerializer):
+    rating = serializers.FloatField()
+    likes = serializers.IntegerField()
+    dislikes = serializers.IntegerField()
     class Meta:
         model = Book
-        fields = ['id', 'isbn', 'title', 'description', 'thumbnail', 'author']
+        fields = ['id', 'isbn', 'title', 'description', 'thumbnail', 'author', 'rating', 'likes', 'dislikes']
