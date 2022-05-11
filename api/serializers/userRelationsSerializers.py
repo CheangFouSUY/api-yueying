@@ -16,10 +16,7 @@ class userBookDetailSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'book': {'read_only': True},
             'user': {'read_only': True},
-<<<<<<< HEAD
-=======
             'isRated': {'read_only': True},
->>>>>>> c7d3d89fc001baa1a7ea321953739edbb102b6df
             'createdAt': {'read_only': True},
             'updatedAt': {'read_only': True},
         }
