@@ -35,7 +35,8 @@ urlpatterns = [
 
     # Books Path
     path('book/<uuid:bookId>', BookDetailView.as_view(), name="book_detail"),
-    path('book/', BookListAndCreateView.as_view(), name="book_list_and_create"),
+    path('book/', BookCreateView.as_view(), name="book_create"),
+    path('book/list', BookListView.as_view(), name="book_list"),
     path('book/react/<uuid:bookId>', BookReactionView.as_view(), name="book_reaction"),
 
     # Movies Path

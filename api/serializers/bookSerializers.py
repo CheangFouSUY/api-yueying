@@ -50,4 +50,4 @@ class ListBookSerializer(serializers.ModelSerializer):
     dislikes = serializers.IntegerField()
     class Meta:
         model = Book
-        fields = ['id', 'isbn', 'title', 'description', 'thumbnail', 'author', 'rating', 'likes', 'dislikes']
+        fields = ['id', 'isbn', 'title', 'description', 'thumbnail', 'author', 'publisher', 'rating', 'likes', 'dislikes']

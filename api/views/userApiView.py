@@ -181,7 +181,7 @@ class UserDetailView(generics.GenericAPIView):
         return UserDetailSerializer
 
 
-    def get(self, request, userId):
+    def get(self, userId):
         try:
             user = CustomUser.objects.get(pk=userId)
             books = userBook.objects.filter(user=user, isSaved=True)
@@ -205,11 +205,12 @@ class UserDetailView(generics.GenericAPIView):
         except:
             return Response({"message": "Update User Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, userId):
+    def delete(self, userId):
         try:
             user = get_object_or_404(CustomUser, pk=userId)
             user.isDeleted = True
-            user.save(updatedAt=timezone.now())
+            user.updatedAt = timezone.now()
+            user.save()
             return Response({"message": "Delete User Successfully"}, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Delete User Failed"}, status=status.HTTP_400_BAD_REQUEST)
