@@ -1,8 +1,9 @@
+import operator
 from django.shortcuts import get_object_or_404
-from rest_framework.response import Response
-from rest_framework import generics, status, views, permissions
 from django.utils import timezone
-
+from django.db.models import Q
+from rest_framework.response import Response
+from rest_framework import generics, status, permissions
 
 from ..serializers.reviewSerializers import *
 from ..serializers.userRelationsSerializers import userReviewDetailSerializer
@@ -58,29 +59,11 @@ class ReviewDetailView(generics.GenericAPIView):
 
 
 """
-GET: Get All Reviews
 POST: Create Review
 """
-class ReviewListAndCreateView(generics.ListCreateAPIView):
-    serializer_class = ListReviewSerializer
+class ReviewCreateView(generics.CreateAPIView):
+    serializer_class = ReviewCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def get_serializer_class(self):
-        if self.request.method in ['GET']:
-            return ListReviewSerializer
-        return ReviewCreateSerializer
-
-    # Get All Reviews
-    def get_queryset(self):
-        allReviews = Review.objects.filter()
-        for review in allReviews:
-            allUserReviews = userReview.objects.filter(review=review)
-            likes = allUserReviews.filter(response='L').count()
-            dislikes = allUserReviews.filter(response='D').count()
-            review.likes = likes
-            review.dislikes = dislikes
-        return allReviews
-
 
     def post(self, request):
         user = request.user
@@ -90,6 +73,44 @@ class ReviewListAndCreateView(generics.ListCreateAPIView):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+
+"""
+GET: Get All Reviews
+"""
+class ReviewListView(generics.ListAPIView):
+    serializer_class = ListReviewSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    # Get All Reviews
+    def get_queryset(self):
+        orderBy = self.request.GET.get('orderBy')
+        search = self.request.GET.get('search')
+        feed = self.request.GET.get('feed')
+
+        filter = Q()
+        if search is not None:
+            searchTerms = search.split(' ')
+            for term in searchTerms:
+                filter &= Q(title__icontains=term) | Q(description__icontains=term) | Q(createdBy__username__icontains=term) | Q(feed__title__icontains=term) 
+        if feed is not None:
+            filter &= Q(feed=feed)
+            
+        allReviews = Review.objects.filter(filter)
+        for review in allReviews:
+            allUserReviews = userReview.objects.filter(review=review)
+            likes = allUserReviews.filter(response='L').count()
+            dislikes = allUserReviews.filter(response='D').count()
+            review.likes = likes
+            review.dislikes = dislikes
+
+        if orderBy == 'd':
+            orderBy = 'dislikes'
+        else:
+            orderBy = 'likes'
+
+        ordered = sorted(allReviews, key=operator.attrgetter(orderBy), reverse=True)
+
+        return ordered
 
 
 """

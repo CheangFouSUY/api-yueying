@@ -1,13 +1,12 @@
 import operator
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db.models import Avg, Count, Max, Q, Exists
+from django.db.models import Avg, Q
 from rest_framework.response import Response
-from rest_framework import generics, status, views, permissions, filters
+from rest_framework import generics, status, permissions
 
 from ..serializers.bookSerializers import *
 from ..serializers.userRelationsSerializers import userBookDetailSerializer
-from ..utils import *
 from ..models.books import Book
 from ..models.userRelations import userBook
 
@@ -81,10 +80,8 @@ GET: Get All Books
 class BookListView(generics.ListAPIView):
     serializer_class = ListBookSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    # search_fields = ['title']
-    # filter_backends = (filters.SearchFilter,)
 
-    # # Get All Books
+    # Get All Books
     def get_queryset(self):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
@@ -96,7 +93,7 @@ class BookListView(generics.ListAPIView):
             for term in searchTerms:
                 filter &= Q(isbn__icontains=term) | Q(title__icontains=term) | Q(author__icontains=term) | Q(publisher__icontains=term)
         if category is not None:
-            filter &= Q(category__icontains=category)
+            filter &= Q(category=category)
 
         allBooks = Book.objects.filter(filter)
         for book in allBooks:
@@ -107,6 +104,7 @@ class BookListView(generics.ListAPIView):
             book.rating = rating['rateScore__avg'] if rating['rateScore__avg'] else 0
             book.likes = likes
             book.dislikes = dislikes
+
         if orderBy == 'l':
             orderBy = 'likes'
         elif orderBy == 'd':
@@ -114,6 +112,7 @@ class BookListView(generics.ListAPIView):
         else:
             orderBy = 'rating'
         ordered = sorted(allBooks, key=operator.attrgetter(orderBy), reverse=True)
+
         return ordered
 
 

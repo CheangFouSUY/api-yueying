@@ -1,8 +1,9 @@
+import operator
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db.models import Avg
+from django.db.models import Avg, Q
 from rest_framework.response import Response
-from rest_framework import generics, status, views, permissions
+from rest_framework import generics, status, permissions
 
 
 from ..serializers.movieSerializers import *
@@ -62,21 +63,42 @@ class MovieDetailView(generics.GenericAPIView):
 
 
 """
-GET: Get All Movies
 POST: Create Movie
 """
-class MovieListAndCreateView(generics.ListCreateAPIView):
+class MovieCreateView(generics.CreateAPIView):
+    serializer_class = MovieCreateSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+"""
+GET: Get All Movies
+"""
+class MovieListView(generics.ListAPIView):
     serializer_class = ListMovieSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def get_serializer_class(self):
-        if self.request.method in ['GET']:
-            return ListMovieSerializer
-        return MovieCreateSerializer
-
     # Get All Movies
     def get_queryset(self):
-        allMovies = Movie.objects.filter()
+        orderBy = self.request.GET.get('orderBy')
+        search = self.request.GET.get('search')
+        category = self.request.GET.get('category')
+
+        filter = Q()
+        if search is not None:
+            searchTerms = search.split(' ')
+            for term in searchTerms:
+                filter &= Q(title__icontains=term) | Q(director__icontains=term) | Q(actor__icontains=term)
+        if category is not None:
+            filter &= Q(category=category)
+
+        allMovies = Movie.objects.filter(filter)
         for movie in allMovies:
             allUserMovies = userMovie.objects.filter(movie=movie)
             rating = allUserMovies.filter(isRated=True).aggregate(Avg('rateScore'))
@@ -85,14 +107,16 @@ class MovieListAndCreateView(generics.ListCreateAPIView):
             movie.rating = rating['rateScore__avg'] if rating['rateScore__avg'] else 0
             movie.likes = likes
             movie.dislikes = dislikes
-        return allMovies
 
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        if orderBy == 'l':
+            orderBy = 'likes'
+        elif orderBy == 'd':
+            orderBy = 'dislikes'
+        else:
+            orderBy = 'rating'
+        ordered = sorted(allMovies, key=operator.attrgetter(orderBy), reverse=True)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return ordered
 
 
 """

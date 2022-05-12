@@ -41,7 +41,8 @@ urlpatterns = [
 
     # Movies Path
     path('movie/<uuid:movieId>', MovieDetailView.as_view(), name="movie_detail"),
-    path('movie/', MovieListAndCreateView.as_view(), name="movie_list_and_create"),
+    path('movie/', MovieCreateView.as_view(), name="movie_create"),
+    path('movie/list', MovieListView.as_view(), name="movie_list"),
     path('movie/react/<uuid:movieId>', MovieReactionView.as_view(), name="movie_reaction"),
 
     # Groups Path
@@ -78,21 +79,25 @@ urlpatterns = [
 
     # Feed Path
     path('feed/<uuid:feedId>', FeedDetailView.as_view(), name="feed_detail"),
-    path('feed/', FeedListAndCreateView.as_view(), name="feed_list_and_create"),
+    path('feed/', FeedCreateView.as_view(), name="feed_create"),
+    path('feed/list', FeedListView.as_view(), name="feed_list"),
     path('feed/react/<uuid:feedId>', FeedReactionView.as_view(), name="feed_reaction"),
 
     # Review Path
     path('review/<uuid:reviewId>', ReviewDetailView.as_view(), name="review_detail"),
-    path('review/', ReviewListAndCreateView.as_view(), name="review_list_and_create"),
+    path('review/', ReviewCreateView.as_view(), name="review_create"),
+    path('review/list', ReviewListView.as_view(), name="review_list"),
     path('review/react/<uuid:reviewId>', ReviewReactionView.as_view(), name="feed_reaction"),
 
     #Report Path
     path('report/<uuid:reportId>', ReportDetailView.as_view(), name="report_detail"),
-    path('report/', ReportListAndCreateView.as_view(), name="report_list_and_create"),
-
+    path('report/', ReportCreateView.as_view(), name="report_create"),
+    path('report/list', ReportListView.as_view(), name="report_list"),
+    
     # Feedback Path
     path('feedback/<uuid:feedbackId>', FeedbackDetailView.as_view(), name="feedback_detail"),
-    path('feedback/', FeedbackListAndCreateView.as_view(), name="feedback_list_and_create"),
+    path('feedback/', FeedbackCreateView.as_view(), name="feedback_create"),
+    path('feedback/list', FeedbackListView.as_view(), name="feedback_list"),
 
     
     # path('auth/', obtain_auth_token),

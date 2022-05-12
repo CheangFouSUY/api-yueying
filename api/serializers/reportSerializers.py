@@ -38,5 +38,5 @@ Serializer class for Listing Report
 class ListReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Report
-        '__all__'
+        fields = '__all__'
         #fields = ['id', 'title', 'description', 'reportFeed', 'reportReview','category','result','createdBy']
