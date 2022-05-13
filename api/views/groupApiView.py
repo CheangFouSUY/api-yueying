@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework import generics, status, views, permissions
+from django.db.models import Q
 
 from ..serializers.groupSerializers import *
 from ..serializers.groupRelationsSerializers import *
@@ -15,10 +16,10 @@ from ..models.feeds import *
 from ..models.reviews import *
 from ..models.groupRelations import *
 
-""" For Admin(superuser)
-GET: Get Group Detail By Id  # for any
-PUT: Update Group By Id      # for superuser
-DELETE: Delete Group By Id (set isDelete = True)     # for superuser
+"""
+GET : Get a group by Id
+PUT: Update Group By Id 
+DELETE: Delete Group By Id
 """
 class GroupDetailView(generics.GenericAPIView):
     serializer_class = GroupDetailSerializer
@@ -58,28 +59,12 @@ class GroupDetailView(generics.GenericAPIView):
         except:
             return Response({"message": "Delete Group Failed,Probably Not Group Creator"}, status=status.HTTP_400_BAD_REQUEST)
 
-
-"""
-GET: Get All Groups
-POST: Create Group
-"""
-class GroupListAndCreateView(generics.ListCreateAPIView):
-    serializer_class = ListGroupSerializer
+'''
+POST:Create Group
+'''
+class GroupCreateView(generics.CreateAPIView):
+    serializer_class = GroupCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def get_serializer_class(self):
-        if self.request.method in ['GET']:
-            return ListGroupSerializer
-        return GroupCreateSerializer
-
-    # Get All Groups
-
-    def get_queryset(self):
-        allGroups = Group.objects.filter()
-        for group in allGroups:
-            members = userGroup.objects.filter(group=group).count()
-            group.members = members
-        return allGroups
 
     def post(self, request):
         user = request.user
@@ -87,14 +72,16 @@ class GroupListAndCreateView(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save(createdBy=user)
 
+        #add userGroup
         group = get_object_or_404(Group, pk=serializer.data["id"])
-        usergroup = userGroup(group=group, user=request.user,isAdmin=True)
+        usergroup = userGroup(group=group, user=request.user,isAdmin=True,isMainAdmin=True)
         usergroup.save()
 
         return Response(serializer.data,status=status.HTTP_201_CREATED)
 
+
 '''
-Join and leave group
+POST/DELETE: Join and leave group
 '''
 class JoinLeaveGroupView(generics.GenericAPIView):
     serializer_class = UserGroupJoinSerializer
@@ -110,107 +97,110 @@ class JoinLeaveGroupView(generics.GenericAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, groupId):
-        try:
-            record = get_object_or_404(userGroup,group=groupId,user=request.user)
-            record.delete()
-            return Response({"message": "Leave Group Successfully"}, status=status.HTTP_200_OK)
-        except:
-            return Response({"message": "Leave Group Failed,Probably Not Group Member"}, status=status.HTTP_400_BAD_REQUEST)
+        user = request.user
+        isMember = userGroup.objects.filter(group=groupId, user=user)
 
+        if isMember:
+            if not isMember.isMainAdmin:
+                isMember.delete()
+                return Response({"message": "Leave Group Successfully"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"message": "Leave Group Failed,You Are Main Admin Of The Group"}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response({"message": "Leave Group Failed,Not Group Member"}, status=status.HTTP_403_FORBIDDEN)
+
+#################################### For members ####################################
 
 '''
-GET: list feed (didn't separate pin/featured and normal)
 POST: Create Feed in Group
 '''
-
-class GroupFeedListAndCreateView(generics.ListCreateAPIView):
-    serializer_class = ListFeedSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    #permission_classes = [permissions.IsGroupMemberOrReadOnly]  # need to modify permission
-
-    def get_serializer_class(self):
-        if self.request.method in ['GET']:
-            return ListFeedSerializer
-        return FeedCreateSerializer
-
-    # Get All Group Feeds
-    def get_queryset(self):
-        group = self.kwargs['groupId']
-        allFeeds = Feed.objects.filter(belongTo = group)
-        for feed in allFeeds:
-            allUserFeeds = userFeed.objects.filter(feed=feed)
-            reviewers = Review.objects.filter(feed=feed).count()
-            likes = allUserFeeds.filter(response='L').count()
-            dislikes = allUserFeeds.filter(response='D').count()
-            feed.likes = likes
-            feed.dislikes = dislikes
-            feed.reviewers = reviewers
-        return allFeeds
+class GroupFeedCreateView(generics.CreateAPIView):
+    serializer_class = FeedCreateSerializer
 
     def post(self,request,groupId):
         user = request.user
-        group = get_object_or_404(Group, pk=groupId)
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(createdBy=user, isPublic=False ,belongTo=group)
+        isMember = userGroup.objects.filter(group=groupId, user=user)
+        if isMember:
+            group = get_object_or_404(Group, pk=groupId)
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(createdBy=user, isPublic=False ,belongTo=group)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # add groupFeed
+            group = get_object_or_404(Group, pk=groupId)
+            feed = get_object_or_404(Feed, pk=serializer.data["id"])
+            groupfeed = groupFeed(group=group, feed=feed)
+            groupfeed.save()
+            print(groupfeed)
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({"message": "Not Group Member."}, status=status.HTTP_403_FORBIDDEN)
+
 
 '''
-Apply group admin 
+POST:Request Group Admin 
 '''
-
-class GroupAdminApplyView(generics.ListCreateAPIView):
-    serializer_class = GroupAdminSerializer
+class GroupAdminRequestView(generics.ListCreateAPIView):
+    serializer_class = AdminRequestSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     # permission_classes = [permissions.IsGroupMember]  # need to modify permission，message of invalid permisson is define in permission.py
 
     def post(self,request,groupId):
         try:
             user = request.user
-            isMember = get_object_or_404(userGroup, group=groupId, user=user)
-            data = {'user':user.id,'group':groupId}
-            serializer = self.get_serializer(data=data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
+            isMember = userGroup.objects.filter(group=groupId, user=user)
+            if isMember:
+                data = {'user':user.id,'group':groupId}
+                serializer = self.get_serializer(data=data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
             return Response({"message": "Apply Group Admin Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
         except:
-            return Response({"message": "Apply group admin Failed,Probably Not Group Member"},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Apply group admin Failed,Not Group Member"},status=status.HTTP_403_FORBIDDEN)
+
 
 ############################## For Group Admin ##################################
-
+### Admin Management ###
 '''
-Set group admin -- admin and creator
+PUT:Set Group Admin -- admin and creator
+PUT: Manage admin request
 '''
 class AdminSetView(generics.GenericAPIView):
     serializer_class = UserGroupDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    # permission_classes = [permissions.IsGroupAdmin]  # need to modify permission，message of invalid permisson is define in permission.py
 
-    def put(self,request,groupId,userId):
+    def put(self,request,groupId,userId,result):
         userAdmin = get_object_or_404(userGroup, group=groupId,user=request.user)
 
         if userAdmin.isAdmin:
             userApply = get_object_or_404(userGroup, group=groupId, user=userId)
-            serializer = self.serializer_class(instance=userApply,data={'isAdmin':True})
-            serializer.is_valid(raise_exception=True)
-            serializer.save(isAdmin=True,updatedAt=timezone.now())
-            return Response({"message": "Set Admin Successfully", "data": serializer.data},status=status.HTTP_200_OK)
+            request = get_object_or_404(groupAdminRequest,group=groupId,user=userId)
+            request_serial = AdminRequestSerializer(instance=request, data={'user':userId,'group':groupId,'result': result})
+            request_serial.is_valid(raise_exception=True)
+            request_serial.save(updatedAt=timezone.now())
+            if result == 1:
+                serializer = self.serializer_class(instance=userApply,data={'isAdmin':True})
+                serializer.is_valid(raise_exception=True)
+                serializer.save(updatedAt=timezone.now())
+                return Response({"message": "Set Admin Successfully", "data": serializer.data},status=status.HTTP_200_OK)
+            elif result == 2:
+                return Response({"message": "Request was decline"},status=status.HTTP_200_OK)
         else:
             return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
 
 '''
-Delete group admin -- only group creator
+PUT:Delete Group Admin -- only group creator
 '''
 class AdminDeleteView(generics.GenericAPIView):
     serializer_class = UserGroupDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    # permission_classes = [permissions.IsGroupCreator]  # need to modify permission
 
     def put(self,request,groupId,userId):
-        isCreator = Group.objects.filter(pk=groupId, createdBy=request.user)
+        user = request.user
+        isMainAdmin = userGroup.objects.filter(group=groupId, user=user,isMainAdmin=True)
 
-        if isCreator:
+        if isMainAdmin:
             userDelete = get_object_or_404(userGroup, group=groupId, user=userId,isAdmin=True)
             serializer = self.serializer_class(instance=userDelete,data={'isAdmin':False})
             serializer.is_valid(raise_exception=True)
@@ -220,7 +210,30 @@ class AdminDeleteView(generics.GenericAPIView):
             return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
 
 '''
-Set feed as pinned and unpin
+PUT:Switch Main Admin - only creator/main admin
+'''
+class MainAdminSwitchView(generics.GenericAPIView):
+    serializer_class = UserGroupDetailSerializer
+
+    def put(self,request,groupId,userId):
+        user = request.user
+        isMainAdmin = userGroup.objects.filter(group=groupId, user=user,isMainAdmin=True).first()
+
+        if isMainAdmin:
+            userSwitch = get_object_or_404(userGroup, group=groupId, user=userId)
+            serializer = self.serializer_class(instance=userSwitch,data={'isMainAdmin':True})
+            serializer.is_valid(raise_exception=True)
+            serializer.save(updatedAt=timezone.now())
+            serializer1 = UserGroupDetailSerializer(instance=isMainAdmin, data={'isMainAdmin': False})
+            serializer1.is_valid(raise_exception=True)
+            serializer1.save(updatedAt=timezone.now())
+            return Response({"message": "Switch Main Admin Successfully", "data": serializer.data},status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
+
+### Feed Management ###
+'''
+PUT:Set Feed as Pinned and Unpin
 '''
 class PinnedFeedView(generics.GenericAPIView):
     serializer_class = GroupFeedDetailSerializer
@@ -258,9 +271,8 @@ class UnpinFeedView(generics.GenericAPIView):
         else:
             return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
 
-
 '''
-Set feed as featured and unfeatured
+PUT:Set Feed as Featured and Unfeatured
 '''
 class FeaturedFeedView(generics.GenericAPIView):
     serializer_class = GroupFeedDetailSerializer
@@ -299,7 +311,7 @@ class UnfeaturedFeedView(generics.GenericAPIView):
             return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
 
 '''
-Delete group feed
+DELETE:Delete Group Feed
 '''
 class GroupFeedDeleteView(generics.GenericAPIView):
     serializer_class = GroupFeedDetailSerializer
@@ -322,7 +334,7 @@ class GroupFeedDeleteView(generics.GenericAPIView):
             return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
 
 '''
-Banned Member
+PUT:Banned Member
 '''
 class GroupMemberBanView(generics.GenericAPIView):
     serializer_class = UserGroupDetailSerializer
@@ -341,9 +353,10 @@ class GroupMemberBanView(generics.GenericAPIView):
             return Response({"message": "No Permission."}, status=status.HTTP_403_FORBIDDEN)
 
 
-################## Show ##################
+################################ Show ######################################
+### Outside ###
 '''
-Sort by category in descending order
+GET: Sort by Category (members in descending order)
 '''
 class GroupbyCategoryView(generics.ListCreateAPIView):
     serializer_class = ListGroupSerializer
@@ -355,11 +368,11 @@ class GroupbyCategoryView(generics.ListCreateAPIView):
         for group in allGroups:
             members = userGroup.objects.filter(group=group).count()
             group.members = members
-        ordered = sorted(allGroups, key=operator.attrgetter('members'),reverse=True)
+
         return ordered
 
 '''
-Show group join by user
+GET: Show group join by user
 '''
 class ShowUserGroupView(generics.ListCreateAPIView):
     serializer_class = ListGroupSerializer
@@ -373,17 +386,115 @@ class ShowUserGroupView(generics.ListCreateAPIView):
         ordered = sorted(allGroups, key=operator.attrgetter('members'), reverse=True)
         return ordered
 
+### Inside Group ###
+'''
+GET : Show/Search Group Feed
+'''
+class GroupFeedListView(generics.ListAPIView):
+    serializer_class = ListFeedSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    # Get All Group Feeds
+    def get_queryset(self):
+        group = self.kwargs['groupId']
+        orderBy = self.request.GET.get('orderBy')
+        search = self.request.GET.get('search')
+
+        filter = Q()
+        filter &= Q(belongTo = group)
+
+        if search is not None:
+            searchTerms = search.split(' ')
+            for term in searchTerms:
+                filter &= Q(title__icontains=term) | Q(description__icontains=term) | Q(createdBy__username__icontains=term)
+
+        allFeeds = Feed.objects.filter(filter)
+        for feed in allFeeds:
+            allUserFeeds = userFeed.objects.filter(feed=feed)
+            reviewers = Review.objects.filter(feed=feed).count()
+            likes = allUserFeeds.filter(response='L').count()
+            dislikes = allUserFeeds.filter(response='D').count()
+            feed.likes = likes
+            feed.dislikes = dislikes
+            feed.reviewers = reviewers
+            pin = groupFeed.objects.filter(feed=feed,group=group,isPin = True)
+            if pin:
+                feed.isPin = 0
+            else:
+                feed.isPin = 1
+        ordered = sorted(allFeeds, key=operator.attrgetter('isPin','updatedAt'))
+        return ordered
+
+################################ Query ######################################
+'''
+GET:Show/Search Group
+'''
+class GroupListView(generics.ListAPIView):
+    serializer_class = ListGroupSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    # Get All Groups
+    def get_queryset(self):
+        orderBy = self.request.GET.get('orderBy')
+        search = self.request.GET.get('search')
+        category = self.request.GET.get('category')
+
+        filter = Q()
+        if search is not None:
+            searchTerms = search.split(' ')
+            for term in searchTerms:
+                filter |= Q(groupName__icontains=term) | Q(description__icontains=term) | Q(createdBy__username__icontains=term)
+
+        if category is not None:
+            filter &= Q(category=category)
+
+
+        allGroups = Group.objects.filter(filter)
+        for group in allGroups:
+            members = userGroup.objects.filter(group=group).count()
+            group.members = members
+        ordered = sorted(allGroups, key=operator.attrgetter('members'), reverse=True)
+        return ordered
 
 '''
-Show all group member(no ordering)
+GET:Show/Search Member (prior main admin and other admin) (only member can search?)
 '''
-class ShowGroupMemberView(generics.ListCreateAPIView):
+class GroupMemberView(generics.ListAPIView):
     serializer_class = ListUserSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        allMember = CustomUser.objects.filter(usergroup__group=self.kwargs['groupId'])
-        return allMember
+        group = self.kwargs['groupId']
+        search = self.request.GET.get('search')
 
+        filter = Q()
+        filter &= Q(usergroup__group=group)
+        if search is not None:
+            searchTerms = search.split(' ')
+            for term in searchTerms:
+                filter &= Q(username__icontains=term)
 
+        allMember = CustomUser.objects.filter(filter)
+        for member in allMember:
+            admin = userGroup.objects.filter(user=member, group=group).first()
+            if admin.isMainAdmin:
+                member.isAdmin = 0
+            elif admin.isAdmin:
+                member.isAdmin = 1
+            else:
+                member.isAdmin = 2
+        ordered = sorted(allMember, key=operator.attrgetter('isAdmin'))
+        return ordered
+
+'''
+GET:Show Admin Request
+'''
+class ShowRequestView(generics.ListCreateAPIView):
+    serializer_class = AdminRequestSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        group = self.kwargs['groupId']
+        allRequest = groupAdminRequest.objects.filter(group=group,result=0)
+        return allRequest
 

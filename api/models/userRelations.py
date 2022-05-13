@@ -65,6 +65,7 @@ class userGroup(models.Model):
     group = models.ForeignKey("Group", on_delete=models.CASCADE, null=False, blank=False)
     user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
     isAdmin = models.BooleanField(default=False)
+    isMainAdmin = models.BooleanField(default=False)
     isBanned = models.BooleanField(default=False)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
