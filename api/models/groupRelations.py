@@ -11,7 +11,7 @@ class groupFeed(models.Model):
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
 
-class groupAdminApply(models.Model):
+class groupAdminRequest(models.Model):
     RESULT = (
         (0, 'Pending'),
         (1, 'Accept'),

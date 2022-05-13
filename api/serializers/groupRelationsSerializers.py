@@ -19,7 +19,7 @@ class GroupFeedDetailSerializer(serializers.ModelSerializer):
 class UserGroupDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = userGroup
-        fields = ['group', 'user', 'isAdmin', 'isBanned', 'createdAt', 'updatedAt','banDue']
+        fields = '__all__'
         extra_kwargs = {
             'group': {'read_only': True},
             'user': {'read_only': True},
@@ -35,9 +35,9 @@ class UserGroupJoinSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         return super().validate(attrs)
 
-class GroupAdminSerializer(serializers.ModelSerializer):
+class AdminRequestSerializer(serializers.ModelSerializer):
     class Meta:
-        model = groupAdminApply
+        model = groupAdminRequest
         fields = '__all__'
 
     extra_kwargs = {

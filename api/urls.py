@@ -48,18 +48,23 @@ urlpatterns = [
     # Groups Path
         # GET: get a group detail by groupId
     path('group/<uuid:groupId>', GroupDetailView.as_view(), name="group_detail"),
-        # GET:list all group ; POST:create group
-    path('group/', GroupListAndCreateView.as_view(), name="group_list_and_create"),
+        # GET:searh/list all group
+    path('group/list', GroupListView.as_view(), name="group_list"),
+        #POST:create group
+    path('group/create', GroupCreateView.as_view(), name="group_create"),
         # POST : join group ; DELETE:leave group
     path('group/joinleave/<uuid:groupId>', JoinLeaveGroupView.as_view(), name="join_leave_group"),
-        # GET:list all feed ; POST:create feed in group
-    path('group/feed/<uuid:groupId>',GroupFeedListAndCreateView.as_view(),name="groupFeed_list_and_create"),
+        # GET:search/list all feed in group page
+    path('group/feed/list/<uuid:groupId>',GroupFeedListView.as_view(),name="groupFeed_list"),
+        # POST:create feed in group
+    path('group/feed/create/<uuid:groupId>', GroupFeedCreateView.as_view(), name="groupFeed_create"),
         # POST : apply to become group admin
-    path('group/admin/<uuid:groupId>',GroupAdminApplyView.as_view(),name="group_admin_apply"),
+    path('group/admin/<uuid:groupId>', GroupAdminRequestView.as_view(), name="group_admin_apply"),
         # PUT : set group admin
-    path('group/setAdmin/<uuid:groupId>/<uuid:userId>',AdminSetView.as_view(),name="group_admin_set"),
-        # PUT : remove group admin
+    path('group/setAdmin/<uuid:groupId>/<uuid:userId>/<int:result>',AdminSetView.as_view(),name="group_admin_set"),
     path('group/deleteAdmin/<uuid:groupId>/<uuid:userId>',AdminDeleteView.as_view(),name="group_admin_remove"),
+        # PUT : switch group main admin
+    path('group/switchAdmin/<uuid:groupId>/<uuid:userId>',MainAdminSwitchView.as_view(),name="group_admin_switch"),
         # PUT : set pinned feed
     path('group/pinFeed/<uuid:groupId>/<uuid:feedId>',PinnedFeedView.as_view(),name="group_feed_pin"),
     path('group/unpinFeed/<uuid:groupId>/<uuid:feedId>',UnpinFeedView.as_view(),name="group_feed_unpin"),
@@ -74,8 +79,11 @@ urlpatterns = [
     path('group/joined',ShowUserGroupView.as_view(),name="group_user_join_list"),
         # GET : Sort by category
     path('group/category/<str:category>',GroupbyCategoryView.as_view(),name="group_category_list"),
-        # GET : Show all group member
-    path('group/members/<uuid:groupId>',ShowGroupMemberView.as_view(),name="group_member_list"),
+        # GET : search/list all group member
+    path('group/members/<uuid:groupId>',GroupMemberView.as_view(),name="group_member_list"),
+        # GET : list all admin request
+    path('group/request/<uuid:groupId>', ShowRequestView.as_view(), name="group_request_list"),
+
 
     # Feed Path
     path('feed/<uuid:feedId>', FeedDetailView.as_view(), name="feed_detail"),
