@@ -14,22 +14,22 @@ from .models.groupRelations import *
 # Register your models here.
 
 class UserAdminConfig(admin.ModelAdmin):
-    list_display = ('id', 'username', 'email')
+    list_display = ('id', 'username', 'email', 'profile')
 
 class BookAdminConfig(admin.ModelAdmin):
-    list_display = ('id', 'isbn', 'title', 'year')
+    list_display = ('id', 'isbn', 'title', 'year', 'img')
 
 class MovieAdminConfig(admin.ModelAdmin):
-    list_display = ('id', 'title', 'year')
+    list_display = ('id', 'title', 'year', 'img')
 
 class GroupAdminConfig(admin.ModelAdmin):
     list_display = ('id', 'groupName', 'category','createdBy')
 
 class FeedAdminConfig(admin.ModelAdmin):
-    list_display = ('id', 'title', 'isPublic','createdBy', 'belongTo')
+    list_display = ('id', 'title', 'isPublic','createdBy', 'belongTo', 'img')
 
 class ReviewAdminConfig(admin.ModelAdmin):
-    list_display = ('id', 'title', 'createdBy')
+    list_display = ('id', 'title', 'createdBy', 'img')
 
 class ReportAdminConfig(admin.ModelAdmin):
     list_display = ('id', 'title', 'category','createdBy','result')

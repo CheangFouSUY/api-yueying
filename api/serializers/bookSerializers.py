@@ -13,6 +13,7 @@ class BookDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'isbn', 'title', 'description', 'img', 'thumbnail', 'author', 'publisher', 'year', 'category']
         extra_kwargs = {
             'id': {'read_only': True},
+            'thumbnail': {'read_only': True},
         }
 
 """
@@ -27,13 +28,14 @@ class BookProfileSerializer(serializers.ModelSerializer):
         fields = ['id', 'isbn', 'title', 'description', 'img', 'thumbnail', 'author', 'publisher', 'year', 'category', 'rating', 'likes', 'dislikes']
         extra_kwargs = {
             'id': {'read_only': True},
+            'thumbnail': {'read_only': True},
         }
 
 
 class BookCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
-        fields = ['isbn', 'title', 'description', 'img', 'thumbnail', 'author', 'publisher', 'year', 'category']
+        fields = ['isbn', 'title', 'description', 'img', 'author', 'publisher', 'year', 'category']
         
     def validate(self, attrs):
         isbn = attrs.get('isbn', '')

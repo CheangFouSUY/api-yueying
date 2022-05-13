@@ -14,6 +14,7 @@ class MovieDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'description', 'img', 'thumbnail', 'director', 'actor', 'year', 'category']
         extra_kwargs = {
             'id': {'read_only': True},
+            'thumbnail': {'read_only': True},
         }
 
 
@@ -29,6 +30,7 @@ class MovieProfileSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'description', 'img', 'thumbnail', 'director', 'actor', 'year', 'category', 'rating', 'likes', 'dislikes']
         extra_kwargs = {
             'id': {'read_only': True},
+            'thumbnail': {'read_only': True},
         }
 
 
@@ -38,7 +40,7 @@ Serializer class for Creating Movie
 class MovieCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movie
-        fields = ['title', 'description', 'img', 'thumbnail', 'director', 'actor', 'year', 'category']
+        fields = ['title', 'description', 'img', 'director', 'actor', 'year', 'category']
         
     def validate(self, attrs):
         return super().validate(attrs)

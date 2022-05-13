@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework_simplejwt',
+    'storages',
 
     # Internal Apps
     'api',
@@ -177,6 +178,17 @@ EMAIL_USE_TLS = env('EMAIL_USE_TLS')
 EMAIL_PORT = env('EMAIL_PORT')
 
 BACKEND_URL = env('BACKEND_URL')
+
+# AWS S3 Bucket
+AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME')
+AWS_S3_SIGNATURE_VERSION = env('AWS_S3_SIGNATURE_VERSION')
+AWS_FILE_OVERWIRTE = env('AWS_FILE_OVERWIRTE')
+AWS_DEFAULT_ACL = env('AWS_DEFAULT_ACL')
+DEFAULT_FILE_STORAGE = env('DEFAULT_FILE_STORAGE')
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/

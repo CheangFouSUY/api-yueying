@@ -1,9 +1,7 @@
 import uuid
 from django.utils import timezone
 from django.db import models
-from datetime import date
-from .users import CustomUser
-from .groups import Group
+from ..utils import get_thumbnail
 
 class Feed(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -16,3 +14,8 @@ class Feed(models.Model):
     belongTo = models.ForeignKey("Group", on_delete=models.CASCADE, null=True, blank=True)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
+
+    def save(self, *args, **kwargs):
+        if self.img:
+            self.img = get_thumbnail(self.img, 100, False)     # quality = 100, isThumbnail False = maxWidthHeight = 1024px
+        super(Feed, self).save(*args, **kwargs)
