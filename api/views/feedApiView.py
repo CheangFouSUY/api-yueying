@@ -1,11 +1,12 @@
+import operator
 from django.shortcuts import get_object_or_404
-from rest_framework.response import Response
-from rest_framework import generics, status, views, permissions
 from django.utils import timezone
+from django.db.models import Q
+from rest_framework.response import Response
+from rest_framework import generics, status, permissions
 
 from ..serializers.feedSerializers import *
 from ..serializers.userRelationsSerializers import userFeedDetailSerializer
-from ..utils import *
 from ..models.feeds import Feed
 from ..models.reviews import Review
 from ..models.userRelations import userFeed
@@ -60,30 +61,11 @@ class FeedDetailView(generics.GenericAPIView):
 
 
 """
-GET: Get All Feeds
 POST: Create Feed
 """
-class FeedListAndCreateView(generics.ListCreateAPIView):
-    serializer_class = ListFeedSerializer
+class FeedCreateView(generics.CreateAPIView):
+    serializer_class = FeedCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def get_serializer_class(self):
-        if self.request.method in ['GET']:
-            return ListFeedSerializer
-        return FeedCreateSerializer
-
-    # Get All Feeds
-    def get_queryset(self):
-        allFeeds = Feed.objects.filter()
-        for feed in allFeeds:
-            allUserFeeds = userFeed.objects.filter(feed=feed)
-            reviewers = Review.objects.filter(feed=feed).count()
-            likes = allUserFeeds.filter(response='L').count()
-            dislikes = allUserFeeds.filter(response='D').count()
-            feed.likes = likes
-            feed.dislikes = dislikes
-            feed.reviewers = reviewers
-        return allFeeds
 
     def post(self, request):
         user = request.user
@@ -93,6 +75,54 @@ class FeedListAndCreateView(generics.ListCreateAPIView):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+"""
+GET: Get All Feeds
+"""
+class FeedListView(generics.ListAPIView):
+    serializer_class = ListFeedSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    # Get All Feeds
+    def get_queryset(self):
+        orderBy = self.request.GET.get('orderBy')
+        search = self.request.GET.get('search')
+        group = self.request.GET.get('belongTo')
+        isPublic = self.request.GET.get('isPublic')
+        # by default, get feed return isPublic = True feed
+        if isPublic is None:
+            isPublic = True
+
+        filter = Q()
+        if search is not None:
+            searchTerms = search.split(' ')
+            for term in searchTerms:
+                filter &= Q(title__icontains=term) | Q(description__icontains=term) | Q(createdBy__username__icontains=term)
+        if group is not None:
+            filter &= Q(belongTo=group)
+            isPublic = False    # by Default if it has belongTo field, then it's not public anymore
+
+        filter &= Q(isPublic=isPublic)
+
+        allFeeds = Feed.objects.filter(filter)
+        for feed in allFeeds:
+            allUserFeeds = userFeed.objects.filter(feed=feed)
+            reviewers = Review.objects.filter(feed=feed).count()
+            likes = allUserFeeds.filter(response='L').count()
+            dislikes = allUserFeeds.filter(response='D').count()
+            feed.likes = likes
+            feed.dislikes = dislikes
+            feed.reviewers = reviewers
+
+        if orderBy == 'l':
+            orderBy = 'likes'
+        elif orderBy == 'd':
+            orderBy = 'dislikes'
+        else:
+            orderBy = 'reviewers'
+
+        ordered = sorted(allFeeds, key=operator.attrgetter(orderBy), reverse=True)
+
+        return ordered
 
 """
 PUT: userFeed relation, uses for response and follow

@@ -24,7 +24,7 @@ Serializer class for Creating Feedback
 class FeedbackCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feedback
-        fields = ['title', 'description']
+        fields = ['title', 'description', 'category']
 
     def validate(self, attrs):
         return super().validate(attrs)

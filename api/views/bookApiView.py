@@ -1,12 +1,12 @@
+import operator
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db.models import Avg
+from django.db.models import Avg, Q
 from rest_framework.response import Response
-from rest_framework import generics, status, views, permissions
+from rest_framework import generics, status, permissions
 
 from ..serializers.bookSerializers import *
 from ..serializers.userRelationsSerializers import userBookDetailSerializer
-from ..utils import *
 from ..models.books import Book
 from ..models.userRelations import userBook
 
@@ -61,21 +61,41 @@ class BookDetailView(generics.GenericAPIView):
 
 
 """
-GET: Get All Books
 POST: Create Book
 """
-class BookListAndCreateView(generics.ListCreateAPIView):
+class BookCreateView(generics.CreateAPIView):
+    serializer_class = BookCreateSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+"""
+GET: Get All Books
+"""
+class BookListView(generics.ListAPIView):
     serializer_class = ListBookSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def get_serializer_class(self):
-        if self.request.method in ['GET']:
-            return ListBookSerializer
-        return BookCreateSerializer
-
     # Get All Books
     def get_queryset(self):
-        allBooks = Book.objects.filter()
+        orderBy = self.request.GET.get('orderBy')
+        search = self.request.GET.get('search')
+        category = self.request.GET.get('category')
+
+        filter = Q()
+        if search is not None:
+            searchTerms = search.split(' ')
+            for term in searchTerms:
+                filter &= Q(isbn__icontains=term) | Q(title__icontains=term) | Q(author__icontains=term) | Q(publisher__icontains=term)
+        if category is not None:
+            filter &= Q(category=category)
+
+        allBooks = Book.objects.filter(filter)
         for book in allBooks:
             allUserBooks = userBook.objects.filter(book=book)
             rating = allUserBooks.filter(isRated=True).aggregate(Avg('rateScore'))
@@ -84,14 +104,16 @@ class BookListAndCreateView(generics.ListCreateAPIView):
             book.rating = rating['rateScore__avg'] if rating['rateScore__avg'] else 0
             book.likes = likes
             book.dislikes = dislikes
-        return allBooks
 
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        if orderBy == 'l':
+            orderBy = 'likes'
+        elif orderBy == 'd':
+            orderBy = 'dislikes'
+        else:
+            orderBy = 'rating'
+        ordered = sorted(allBooks, key=operator.attrgetter(orderBy), reverse=True)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return ordered
 
 
 """

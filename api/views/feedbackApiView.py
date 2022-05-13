@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
 from rest_framework.response import Response
-from rest_framework import generics, status, views, permissions
+from rest_framework import generics, status, permissions
 
 
 from ..serializers.feedbackSerializers import *
@@ -19,7 +20,7 @@ class FeedbackDetailView(generics.GenericAPIView):
     # Get Feedback Detail By Id
     def get(self, request, feedbackId):
         try:
-            feedback = get_object_or_404(Feed, pk=feedbackId)
+            feedback = get_object_or_404(Feedback, pk=feedbackId)
             serializer = self.serializer_class(instance=feedback)
             return Response(data=serializer.data ,status=status.HTTP_200_OK)
         except:
@@ -37,21 +38,11 @@ class FeedbackDetailView(generics.GenericAPIView):
 
 
 """
-GET: Get All Feedbacks
 POST: Create Feedback
 """
-class FeedbackListAndCreateView(generics.ListCreateAPIView):
-    serializer_class = ListFeedbackSerializer
+class FeedbackCreateView(generics.CreateAPIView):
+    serializer_class = FeedbackCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def get_serializer_class(self):
-        if self.request.method in ['GET']:
-            return ListFeedbackSerializer
-        return FeedbackCreateSerializer
-
-    # Get All Feeds
-    def get_queryset(self):
-        return Feedback.objects.filter()
 
     def post(self, request):
         user = request.user
@@ -60,3 +51,25 @@ class FeedbackListAndCreateView(generics.ListCreateAPIView):
         serializer.save(createdBy=user)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+"""
+GET: Get All Feedbacks
+"""
+class FeedbackListView(generics.ListAPIView):
+    serializer_class = ListFeedbackSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    # Get All Feeds
+    def get_queryset(self):
+        search = self.request.GET.get('search')
+        category = self.request.GET.get('category')
+
+        filter = Q()
+        if search is not None:
+            searchTerms = search.split(' ')
+            for term in searchTerms:
+                filter &= Q(title__icontains=term) | Q(description__icontains=term) | Q(createdBy__username__icontains=term)
+        if category is not None:
+            filter &= Q(category=category)
+
+        return Feedback.objects.filter(filter)

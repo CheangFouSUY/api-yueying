@@ -209,7 +209,8 @@ class UserDetailView(generics.GenericAPIView):
         try:
             user = get_object_or_404(CustomUser, pk=userId)
             user.isDeleted = True
-            user.save(updatedAt=timezone.now())
+            user.updatedAt = timezone.now()
+            user.save()
             return Response({"message": "Delete User Successfully"}, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Delete User Failed"}, status=status.HTTP_400_BAD_REQUEST)
