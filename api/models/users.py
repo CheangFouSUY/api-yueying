@@ -5,7 +5,7 @@ from django.utils import timezone
 import datetime
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
-from ..utils import get_tokens
+from ..utils import get_tokens, get_thumbnail
 
 class CustomUserManager(BaseUserManager):
 
@@ -59,7 +59,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     # activated at email validation only, not at registration.
     is_active = models.BooleanField(default=False)
     isDeleted = models.BooleanField(default=False)
-    profile = models.ImageField(upload_to="uploads/", blank=True)
+    profile = models.ImageField(upload_to="uploads/users", blank=True)
+    thumbnail = models.ImageField(upload_to="uploads/users", blank=True)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
     gender = models.CharField(max_length=10, choices=GENDER, default=GENDER[0][0])
@@ -92,3 +93,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         A method used to get the token of user
         """
         return get_tokens(self)
+
+    
+    def save(self, *args, **kwargs):
+        if self.profile:
+            self.profile = get_thumbnail(self.profile, 100, False)     # quality = 100, isThumbnail False = maxWidthHeight = 1024px
+            self.thumbnail = get_thumbnail(self.profile, 100, True)    # quality = 100, isThumbnail False = maxWidthHeight = 256px
+        super(CustomUser, self).save(*args, **kwargs)

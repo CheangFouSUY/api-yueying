@@ -30,7 +30,7 @@ class FeedProfileSerializer(serializers.ModelSerializer):
     dislikes = serializers.IntegerField()
     class Meta:
         model = Feed
-        fields = ['id', 'title', 'description', 'img', 'isPublic', 'isDeleted', 'createdBy', 'belongTo', 'createdAt', 'updatedAt', 'likes', 'dislikes', 'allReviews','isPin']
+        fields = ['id', 'title', 'description', 'img', 'isPublic', 'isDeleted', 'createdBy', 'belongTo', 'createdAt', 'updatedAt', 'likes', 'dislikes', 'allReviews']
         extra_kwargs = {
             'id': {'read_only': True},
             'isPublic': {'read_only': True},

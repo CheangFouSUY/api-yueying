@@ -2,6 +2,7 @@ import uuid
 from django.utils import timezone
 from django.db import models
 from datetime import date
+from ..utils import get_thumbnail
 
 class Book(models.Model):
     CATEGORY = (
@@ -31,3 +32,9 @@ class Book(models.Model):
     category = models.IntegerField(choices=CATEGORY,null=False, blank=False,default=0)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
+
+    def save(self, *args, **kwargs):
+        if self.img:
+            self.img = get_thumbnail(self.img, 100, False)     # quality = 100, isThumbnail False = maxWidthHeight = 1024px
+            self.thumbnail = get_thumbnail(self.img, 100, True)    # quality = 100, isThumbnail False = maxWidthHeight = 256px
+        super(Book, self).save(*args, **kwargs)
