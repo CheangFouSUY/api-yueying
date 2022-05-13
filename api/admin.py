@@ -50,7 +50,7 @@ class UserReviewAdminConfig(admin.ModelAdmin):
     list_display = ('review', 'user', 'response')
 
 class UserGroupAdminConfig(admin.ModelAdmin):
-    list_display = ('group', 'user', 'isAdmin', 'isBanned')
+    list_display = ('group', 'user', 'isAdmin', 'isMainAdmin','isBanned')
 
 class GroupFeedAdminConfig(admin.ModelAdmin):
     list_display = ('feed', 'group', 'isPin', 'isFeatured')

@@ -5,6 +5,7 @@ from api.views.groupApiView import *
 from api.views.userApiView import *
 from api.views.feedApiView import *
 from api.views.reviewApiView import *
+from api.views.groupAdminView import *
 from .views import *
 from .views.feedbackApiView import *
 from .views.reportApiView import *
