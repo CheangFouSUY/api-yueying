@@ -26,11 +26,13 @@ urlpatterns = [
     path('auth/activate/', UserActivateView.as_view(), name="email_activation"),
     path('auth/request/', RequestPasswordView.as_view(), name="email_verification"),
     path('auth/request-validate/', ResetPasswordTokenValidateView.as_view(), name="reset_password_validate"),
-    path('auth/reset/old', ResetPasswordbyOldpasswordView.as_view(), name="reset_password_oldpswd"),
-    path('auth/reset/question', ResetPasswordbyQuestionView.as_view(), name="reset_password_secureQ"),
+    path('auth/resetpsd/old', ResetPasswordbyOldpasswordView.as_view(), name="reset_password_oldpswd"),
+    path('auth/resetpsd/question', ResetPasswordbyQuestionView.as_view(), name="reset_password_secureQ"),
+    path('auth/resetquestion', ResetSecurityQuestionView.as_view(), name="reset_secureQ"),
     path('auth/login/', LoginView.as_view(), name="login"),
     path('auth/logout/', LogoutView.as_view(), name="logout"),
-    
+
+
     # User Path
     path('user/<uuid:userId>', UserDetailView.as_view(), name="user_detail"),
     path('user/', UserListAndCreateView.as_view(), name="user_list_and_create"),

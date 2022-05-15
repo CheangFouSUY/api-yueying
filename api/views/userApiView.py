@@ -132,7 +132,6 @@ class ResetPasswordbyOldpasswordView(generics.GenericAPIView):
             username = request.user.username
             user = CustomUser.objects.get(username=username)
             result = user.check_password(oldpassword)
-            print(user)
             if result:
                 serializer = self.get_serializer(data=request.data, user=self.request.user)
                 if serializer.is_valid(raise_exception=True):
@@ -171,6 +170,29 @@ class ResetPasswordbyQuestionView(generics.GenericAPIView):
         except:
             return Response({"message": "Password Reset Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
+class ResetSecurityQuestionView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request):
+        try:
+            password = request.data['password']
+            username = request.user.username
+            user = CustomUser.objects.get(username=username)
+            result = user.check_password(password)
+
+            if result:
+                securityAnswer = request.data['securityAnswer']
+                securityQuestion = request.data['securityQuestion']
+                securityAnswer = securityAnswer.lower()
+                user.securityAnswer = make_password(securityAnswer, "a", "pbkdf2_sha1")
+                user.securityQuestion = securityQuestion
+                user.updatedAt = timezone.now()
+                user.save()
+                return Response({"message": "Security Question Reset Successfully"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"message": "Password Is Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+        except:
+            return Response({"message": "Security Question Reset Failed"}, status=status.HTTP_400_BAD_REQUEST)
 """
 POST: Login
 """
