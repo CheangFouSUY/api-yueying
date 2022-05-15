@@ -303,7 +303,7 @@ class GroupMemberView(generics.ListAPIView):
         return ordered
 
 '''
-GET:Show Admin Request
+GET:Show All Admin Request（All result）
 '''
 class ShowRequestView(generics.ListAPIView):
     serializer_class = AdminRequestSerializer
@@ -311,6 +311,17 @@ class ShowRequestView(generics.ListAPIView):
 
     def get_queryset(self):
         group = self.kwargs['groupId']
-        allRequest = groupAdminRequest.objects.filter(group=group,result=0)
+        allRequest = groupAdminRequest.objects.filter(group=group)
         return allRequest
 
+'''
+GET:Show User Who Have Pending Admin Request
+'''
+class ShowRequestUserView(generics.ListAPIView):
+    serializer_class = ListUserSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        group = self.kwargs['groupId']
+        allUser = CustomUser.objects.filter(groupadminrequest__result=0,groupadminrequest__group=group)
+        return allUser

@@ -26,7 +26,8 @@ urlpatterns = [
     path('auth/activate/', UserActivateView.as_view(), name="email_activation"),
     path('auth/request/', RequestPasswordView.as_view(), name="email_verification"),
     path('auth/request-validate/', ResetPasswordTokenValidateView.as_view(), name="reset_password_validate"),
-    path('auth/reset/', ResetPasswordView.as_view(), name="reset_password"),
+    path('auth/reset/old', ResetPasswordbyOldpasswordView.as_view(), name="reset_password_oldpswd"),
+    path('auth/reset/question', ResetPasswordbyQuestionView.as_view(), name="reset_password_secureQ"),
     path('auth/login/', LoginView.as_view(), name="login"),
     path('auth/logout/', LogoutView.as_view(), name="logout"),
     
@@ -84,7 +85,7 @@ urlpatterns = [
     path('group/members/<uuid:groupId>',GroupMemberView.as_view(),name="group_member_list"),
         # GET : list all admin request
     path('group/request/<uuid:groupId>', ShowRequestView.as_view(), name="group_request_list"),
-
+    path('group/requestuser/<uuid:groupId>', ShowRequestUserView.as_view(), name="group_requestuser_list"),
 
     # Feed Path
     path('feed/<uuid:feedId>', FeedDetailView.as_view(), name="feed_detail"),
