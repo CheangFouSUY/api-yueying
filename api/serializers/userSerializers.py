@@ -112,6 +112,7 @@ class ResetPasswordSerializer(serializers.Serializer):
 
 class ResetPasswordByQuestionSerializer(serializers.Serializer):
     newpassword = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+    newpassword2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
     securityQuestion = serializers.IntegerField()
 
     def __init__(self, *args, **kwargs):
@@ -120,6 +121,10 @@ class ResetPasswordByQuestionSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         password = attrs.get('newpassword', '')
+        password2 = attrs.get('newpassword2', '')
+        
+        if password != password2:
+            raise ValidationError("Password must match.")
 
         # uses validators listed in settings.
         if validate_password(password) is None:
@@ -134,6 +139,7 @@ class ResetPasswordByQuestionSerializer(serializers.Serializer):
 
 class ResetPasswordByPasswordSerializer(serializers.Serializer):
     newpassword = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+    newpassword2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
     oldpassword = serializers.CharField(style={'input_type': 'password'}, write_only=True)
 
     def __init__(self, *args, **kwargs):
@@ -142,6 +148,10 @@ class ResetPasswordByPasswordSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         password = attrs.get('newpassword', '')
+        password2 = attrs.get('newpassword2', '')
+        
+        if password != password2:
+            raise ValidationError("Password must match.")
 
         # uses validators listed in settings.
         if validate_password(password) is None:

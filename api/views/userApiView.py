@@ -128,7 +128,6 @@ class ResetPasswordbyOldpasswordView(generics.GenericAPIView):
     def put(self, request):
         try:
             oldpassword = request.data['oldpassword']
-            newpassword = request.data['newpassword']
             username = request.user.username
             user = CustomUser.objects.get(username=username)
             result = user.check_password(oldpassword)
@@ -144,21 +143,24 @@ class ResetPasswordbyOldpasswordView(generics.GenericAPIView):
             return Response({"message": "Password Reset Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
 class ResetPasswordbyQuestionView(generics.GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     serializer_class = ResetPasswordByQuestionSerializer
 
     def put(self, request):
         try:
+            username = request.data['username']
             questionNo = int(request.data['securityQuestion'])
             answer = request.data['securityAnswer'].lower()
             answer = make_password(answer,"a","pbkdf2_sha1")
-            user = CustomUser.objects.get(username=request.user.username)
+            user = CustomUser.objects.get(username=username)
+            user = get_object_or_404(CustomUser, username=username)
+
             correctAns = user.securityAnswer
             correctNo = user.securityQuestion
 
             if questionNo == correctNo:
                 if correctAns == answer:
-                    serializer = self.get_serializer(data=request.data, user=self.request.user)
+                    serializer = self.get_serializer(data=request.data, user=user)
                     if serializer.is_valid(raise_exception=True):
                         serializer.updatePassword()
                         # When update success, should terminate the token, so it cannot be used again
