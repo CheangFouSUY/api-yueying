@@ -8,6 +8,8 @@ from rest_framework.validators import ValidationError
 from ..utils import get_tokens
 from ..models.users import CustomUser
 from .userRelationsSerializers import userBookDetailSerializer, userFeedDetailSerializer, userMovieDetailSerializer
+from django.contrib.auth.hashers import make_password,check_password
+
 """
 Serializer class for registering new user
 """
@@ -17,7 +19,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CustomUser
-        fields = ['email', 'username', 'password', 'password2']
+        fields = ['email','username','password', 'password2','securityQuestion','securityAnswer']
         extra_kwargs = { 'password': {'write_only': True}, }
     
     def validate(self, attrs):
@@ -42,8 +44,14 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     def save(self):
         instance = self.Meta.model(
             email=self.validated_data['email'],
-            username=self.validated_data['username']
+            username=self.validated_data['username'],
+            securityQuestion=self.validated_data['securityQuestion'],
+            securityAnswer=self.validated_data['securityAnswer'],
         )
+
+        securityAnswer =self.validated_data['securityAnswer']
+        securityAnswer = securityAnswer.lower()
+        instance.securityAnswer=make_password(securityAnswer,"a","pbkdf2_sha1")
         password = self.validated_data['password']
         instance.set_password(password)
         instance.save()
@@ -88,19 +96,65 @@ class ResetPasswordSerializer(serializers.Serializer):
     def validate(self, attrs):
         password = attrs.get('password', '')
         password2 = attrs.get('password2', '')
-        
+
         if password != password2:
             raise ValidationError("Password must match.")
-        
+
         # uses validators listed in settings.
         if validate_password(password) is None:
             return super().validate(attrs)
-    
+
     def updatePassword(self):
         password = self.validated_data['password']
         user = self.user
         user.set_password(password)
         user.save(updatedAt=timezone.now())
+
+class ResetPasswordByQuestionSerializer(serializers.Serializer):
+    newpassword = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+    securityQuestion = serializers.IntegerField()
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
+        super().__init__(*args, **kwargs)
+
+    def validate(self, attrs):
+        password = attrs.get('newpassword', '')
+
+        # uses validators listed in settings.
+        if validate_password(password) is None:
+            return super().validate(attrs)
+
+    def updatePassword(self):
+        password = self.validated_data['newpassword']
+        user = self.user
+        user.set_password(password)
+        user.updatedAt = timezone.now()
+        user.save()
+
+class ResetPasswordByPasswordSerializer(serializers.Serializer):
+    newpassword = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+    oldpassword = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
+        super().__init__(*args, **kwargs)
+
+    def validate(self, attrs):
+        password = attrs.get('newpassword', '')
+
+        # uses validators listed in settings.
+        if validate_password(password) is None:
+            return super().validate(attrs)
+
+    def updatePassword(self):
+        password = self.validated_data['newpassword']
+        user = self.user
+        user.set_password(password)
+        user.updatedAt = timezone.now()
+        user.save()
+
+
 
 """
 Serializer class for login
@@ -162,7 +216,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         # might need to have multiple models later on
-        fields = ['id', 'email', 'username', 'firstName', 'lastName', 'about', 'gender', 'profile', 'dob']
+        fields = ['id', 'email', 'username', 'firstName', 'lastName', 'about', 'gender', 'profile', 'dob','securityQuestion']
 
 
 """
@@ -175,7 +229,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         # might need to have multiple models later on
-        fields = ['id', 'email', 'username', 'firstName', 'lastName', 'about', 'gender', 'profile', 'dob', 'books', 'movies', 'feeds']
+        fields = ['id', 'email', 'username', 'firstName', 'lastName', 'about', 'gender', 'profile', 'dob', 'books', 'movies', 'feeds','securityQuestion']
 
 
 

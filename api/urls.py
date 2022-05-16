@@ -5,6 +5,7 @@ from api.views.groupApiView import *
 from api.views.userApiView import *
 from api.views.feedApiView import *
 from api.views.reviewApiView import *
+from api.views.groupAdminView import *
 from .views import *
 from .views.feedbackApiView import *
 from .views.reportApiView import *
@@ -25,10 +26,13 @@ urlpatterns = [
     path('auth/activate/', UserActivateView.as_view(), name="email_activation"),
     path('auth/request/', RequestPasswordView.as_view(), name="email_verification"),
     path('auth/request-validate/', ResetPasswordTokenValidateView.as_view(), name="reset_password_validate"),
-    path('auth/reset/', ResetPasswordView.as_view(), name="reset_password"),
+    path('auth/resetpsd/old', ResetPasswordbyOldpasswordView.as_view(), name="reset_password_oldpswd"),
+    path('auth/resetpsd/question', ResetPasswordbyQuestionView.as_view(), name="reset_password_secureQ"),
+    path('auth/resetquestion', ResetSecurityQuestionView.as_view(), name="reset_secureQ"),
     path('auth/login/', LoginView.as_view(), name="login"),
     path('auth/logout/', LogoutView.as_view(), name="logout"),
-    
+
+
     # User Path
     path('user/<uuid:userId>', UserDetailView.as_view(), name="user_detail"),
     path('user/', UserListAndCreateView.as_view(), name="user_list_and_create"),
@@ -83,7 +87,7 @@ urlpatterns = [
     path('group/members/<uuid:groupId>',GroupMemberView.as_view(),name="group_member_list"),
         # GET : list all admin request
     path('group/request/<uuid:groupId>', ShowRequestView.as_view(), name="group_request_list"),
-
+    path('group/requestuser/<uuid:groupId>', ShowRequestUserView.as_view(), name="group_requestuser_list"),
 
     # Feed Path
     path('feed/<uuid:feedId>', FeedDetailView.as_view(), name="feed_detail"),

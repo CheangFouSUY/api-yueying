@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework import generics, status, views, permissions
+from django.contrib.auth.hashers import make_password,check_password
 
 
 import jwt
@@ -19,7 +20,7 @@ class UserRegisterView(generics.GenericAPIView):
     serializer_class = UserRegisterSerializer
 
     def post(self, request):
-        try: 
+        try:
             serializer = self.serializer_class(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -96,46 +97,102 @@ class ResetPasswordTokenValidateView(generics.GenericAPIView):
             return Response({"message": "Reset Link Expire"}, status=status.HTTP_400_BAD_REQUEST)
         except jwt.exceptions.DecodeError:
             return Response({"message": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
-
-
-"""
-PUT: Reset Password (for authenticated user only)
-"""
-class ResetPasswordView(generics.GenericAPIView):
+'''
+class ResetPasswordbyOldpasswordView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ResetPasswordSerializer
 
     def put(self, request):
         try:
-            serializer = self.get_serializer(data=request.data, user=self.request.user)
-            if serializer.is_valid(raise_exception=True):
-                serializer.updatePassword()
+            oldpassword=request.data['oldpassword']
+            newpassword=request.data['newpassword']
+            username = request.user
+            user = CustomUser.objects.get(username=username)
+            result = user.check_password(oldpassword)
+            if result:
+                user.set_password(newpassword)
+                user.save()
                 # When update success, should terminate the token, so it cannot be used again
                 return Response({"message": "Password Reset Successfully"}, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Password Reset Failed"}, status=status.HTTP_400_BAD_REQUEST)
+'''
 
+"""
+PUT: Reset Password (for authenticated user only)
+"""
+class ResetPasswordbyOldpasswordView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ResetPasswordByPasswordSerializer
 
-# class RequestPasswordBySecurityQuestionView(generics.GenericAPIView):
-#     permission_classes = [permissions.AllowAny]
-#     serializer_class = RequestPasswordSerializer
-#     def post(self, request):
-#         try: 
-#             email = request.data.get('email', '')
-#             username = request.data.get('username', '')
+    def put(self, request):
+        try:
+            oldpassword = request.data['oldpassword']
+            newpassword = request.data['newpassword']
+            username = request.user.username
+            user = CustomUser.objects.get(username=username)
+            result = user.check_password(oldpassword)
+            if result:
+                serializer = self.get_serializer(data=request.data, user=self.request.user)
+                if serializer.is_valid(raise_exception=True):
+                    serializer.updatePassword()
+                    # When update success, should terminate the token, so it cannot be used again
+                    return Response({"message": "Password Reset Successfully"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"message": "Old Password Is Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+        except:
+            return Response({"message": "Password Reset Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
-#             if CustomUser.objects.filter(email=email).exists():
-#                 user = CustomUser.objects.get(email=email)
-#                 if not user.username == username: # incase the username is not the same as email
-#                     return Response({"message": "Invalid Username or Email"}, status=status.HTTP_400_BAD_REQUEST)
-                
-#                 newToken = get_tokens(user)['access']
-#                 send_smtp(user, request, newToken, "Reset Password for YueYing", "reset_email.txt")
-#                 return Response({"message": "Please check your email for futher info."}, status=status.HTTP_200_OK)
-#         except:
-#             return Response({"message": "Failed to Request Password"}, status=status.HTTP_400_BAD_REQUEST)
+class ResetPasswordbyQuestionView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ResetPasswordByQuestionSerializer
 
+    def put(self, request):
+        try:
+            questionNo = int(request.data['securityQuestion'])
+            answer = request.data['securityAnswer'].lower()
+            answer = make_password(answer,"a","pbkdf2_sha1")
+            user = CustomUser.objects.get(username=request.user.username)
+            correctAns = user.securityAnswer
+            correctNo = user.securityQuestion
 
+            if questionNo == correctNo:
+                if correctAns == answer:
+                    serializer = self.get_serializer(data=request.data, user=self.request.user)
+                    if serializer.is_valid(raise_exception=True):
+                        serializer.updatePassword()
+                        # When update success, should terminate the token, so it cannot be used again
+                        return Response({"message": "Password Reset Successfully"}, status=status.HTTP_200_OK)
+                else:
+                    return Response({"message": "Security Answer Is Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({"message": "Security Question Is Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+        except:
+            return Response({"message": "Password Reset Failed"}, status=status.HTTP_400_BAD_REQUEST)
+
+class ResetSecurityQuestionView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request):
+        try:
+            password = request.data['password']
+            username = request.user.username
+            user = CustomUser.objects.get(username=username)
+            result = user.check_password(password)
+
+            if result:
+                securityAnswer = request.data['securityAnswer']
+                securityQuestion = request.data['securityQuestion']
+                securityAnswer = securityAnswer.lower()
+                user.securityAnswer = make_password(securityAnswer, "a", "pbkdf2_sha1")
+                user.securityQuestion = securityQuestion
+                user.updatedAt = timezone.now()
+                user.save()
+                return Response({"message": "Security Question Reset Successfully"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"message": "Password Is Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+        except:
+            return Response({"message": "Security Question Reset Failed"}, status=status.HTTP_400_BAD_REQUEST)
 """
 POST: Login
 """

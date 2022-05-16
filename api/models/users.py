@@ -64,8 +64,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
     gender = models.CharField(max_length=10, choices=GENDER, default=GENDER[0][0])
-    securityQuestion = models.IntegerField(choices=SECURITY,default = 0)
-    securityAnswer = models.CharField(max_length=500, default=NULL)
+    securityQuestion = models.IntegerField(choices=SECURITY,default = 1)
+    securityAnswer = models.CharField(max_length=500, null=False, blank=False)
     dob = models.DateField(default=datetime.date(2000, 1, 1))
 
     objects = CustomUserManager()
