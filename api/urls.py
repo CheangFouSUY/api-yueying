@@ -35,7 +35,8 @@ urlpatterns = [
 
     # User Path
     path('user/<uuid:userId>', UserDetailView.as_view(), name="user_detail"),
-    path('user/', UserListAndCreateView.as_view(), name="user_list_and_create"),
+    path('user/', UserCreateView.as_view(), name="user_create"),
+    path('user/list', UserListView.as_view(), name="user_list"),
 
     # Books Path
     path('book/<uuid:bookId>', BookDetailView.as_view(), name="book_detail"),
@@ -76,7 +77,7 @@ urlpatterns = [
     path('group/featuredFeed/<uuid:groupId>/<uuid:feedId>',FeaturedFeedView.as_view(),name="group_feed_featured"),
     path('group/unfeaturedFeed/<uuid:groupId>/<uuid:feedId>',UnfeaturedFeedView.as_view(),name="group_feed_unfeatured"),
         # DELETE : Delete group feed
-    path('group/delGFeed/<uuid:groupId>/<uuid:feedId>',GroupFeedDeleteView.as_view(),name="group_feed_delete"),
+    path('group/delFeed/<uuid:groupId>/<uuid:feedId>',GroupFeedDeleteView.as_view(),name="group_feed_delete"),
         # PUT : Ban Member
     path('group/banMember/<uuid:groupId>/<uuid:userId>',GroupMemberBanView.as_view(),name="group_member_ban"),
         # GET : Show group user had joined

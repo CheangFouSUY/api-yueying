@@ -46,15 +46,22 @@ class MovieDetailView(generics.GenericAPIView):
 
     # Update Movie By Id
     def put(self, request, movieId):
-        movie = get_object_or_404(Movie, pk=movieId)
-        serializer = self.get_serializer(instance=movie, data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(updatedAt=timezone.now())
-        return Response({"message": "Update Movie Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+        try:
+            if not request.user.is_staff:
+                return Response({"message": "Unauthorized for update movie"}, status=status.HTTP_401_UNAUTHORIZED)
+            movie = get_object_or_404(Movie, pk=movieId)
+            serializer = self.get_serializer(instance=movie, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(updatedAt=timezone.now())
+            return Response({"message": "Update Movie Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+        except:
+            return Response({"message": "Update Movie Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Delete Movie By Id
     def delete(self, request, movieId):
         try:
+            if not request.user.is_staff:
+                return Response({"message": "Unauthorized for delete movie"}, status=status.HTTP_401_UNAUTHORIZED)
             movie = get_object_or_404(Movie, pk=movieId)
             movie.delete()
             return Response({"message": "Delete Movie Successfully"}, status=status.HTTP_200_OK)
@@ -70,11 +77,15 @@ class MovieCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        try:
+            if not request.user.is_staff:
+                return Response({"message": "Unauthorized for create movie"}, status=status.HTTP_401_UNAUTHORIZED)
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except:
+            return Response({"message": "Create Movie Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 """
