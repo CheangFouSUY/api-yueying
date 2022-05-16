@@ -4,7 +4,7 @@ from django.conf import settings
 from rest_framework.response import Response
 from rest_framework import generics, status, views, permissions
 from django.contrib.auth.hashers import make_password,check_password
-
+from django.db.models import Q
 
 import jwt
 from ..serializers.userSerializers import *
@@ -128,7 +128,6 @@ class ResetPasswordbyOldpasswordView(generics.GenericAPIView):
     def put(self, request):
         try:
             oldpassword = request.data['oldpassword']
-            newpassword = request.data['newpassword']
             username = request.user.username
             user = CustomUser.objects.get(username=username)
             result = user.check_password(oldpassword)
@@ -144,21 +143,24 @@ class ResetPasswordbyOldpasswordView(generics.GenericAPIView):
             return Response({"message": "Password Reset Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
 class ResetPasswordbyQuestionView(generics.GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     serializer_class = ResetPasswordByQuestionSerializer
 
     def put(self, request):
         try:
+            username = request.data['username']
             questionNo = int(request.data['securityQuestion'])
             answer = request.data['securityAnswer'].lower()
             answer = make_password(answer,"a","pbkdf2_sha1")
-            user = CustomUser.objects.get(username=request.user.username)
+            user = CustomUser.objects.get(username=username)
+            user = get_object_or_404(CustomUser, username=username)
+
             correctAns = user.securityAnswer
             correctNo = user.securityQuestion
 
             if questionNo == correctNo:
                 if correctAns == answer:
-                    serializer = self.get_serializer(data=request.data, user=self.request.user)
+                    serializer = self.get_serializer(data=request.data, user=user)
                     if serializer.is_valid(raise_exception=True):
                         serializer.updatePassword()
                         # When update success, should terminate the token, so it cannot be used again
@@ -255,6 +257,8 @@ class UserDetailView(generics.GenericAPIView):
     def put(self, request, userId):
         try:
             user = get_object_or_404(CustomUser, pk=userId)
+            if not request.user.is_staff and request.user != user:
+                return Response({"message": "Unauthorized for update user"}, status=status.HTTP_401_UNAUTHORIZED)
             serializer = self.get_serializer(instance=user, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(updatedAt=timezone.now())
@@ -265,6 +269,8 @@ class UserDetailView(generics.GenericAPIView):
     def delete(self, request, userId):
         try:
             user = get_object_or_404(CustomUser, pk=userId)
+            if not request.user.is_staff and request.user != user:
+                return Response({"message": "Unauthorized for delete user"}, status=status.HTTP_401_UNAUTHORIZED)
             user.isDeleted = True
             user.updatedAt = timezone.now()
             user.save()
@@ -273,31 +279,58 @@ class UserDetailView(generics.GenericAPIView):
             return Response({"message": "Delete User Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
 """
-GET: Get All Users
 POST: Create User (email, username)
 """
-class UserListAndCreateView(generics.ListCreateAPIView):
+class UserCreateView(generics.ListCreateAPIView):
+    serializer_class = UserCreateSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def post(self, request): 
+        try:
+            if not request.user.is_staff:
+                return Response({"message": "Unauthorized for create user"}, status=status.HTTP_401_UNAUTHORIZED)
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+            newUser = CustomUser.objects.get(email=serializer.data['email'])
+            newToken = get_tokens(newUser)['access']
+
+            send_smtp(newUser, request, newToken, "Activate Account", "register_email.txt" )
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except:
+            return Response({"message": "Create User Failed"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+"""
+GET: Get All Users
+"""
+class UserListView(generics.ListCreateAPIView):
     serializer_class = ListUserSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def get_serializer_class(self):
-        if self.request.method in ['GET']:
-            return ListUserSerializer
-        return UserCreateSerializer
-
     def get_queryset(self):
-        return CustomUser.objects.filter(isDeleted=False, is_active=True)
+        search = self.request.GET.get('search')
+        isDeleted = self.request.GET.get('isDelete')
+        isActive = self.request.GET.get('isActive')
+        gender = self.request.GET.get('gender')
+        filter = Q()
+        if search is not None:
+            searchTerms = search.split(' ')
+            for term in searchTerms:
+                filter &= Q(username__icontains=term) | Q(firstName__icontains=term) | Q(lastName__icontains=term) | Q(email__icontains=term)
 
+        if isDeleted is None:
+            isDeleted = False
 
-    def post(self, request): 
-        
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        if isActive is None:
+            isActive = True
 
-        newUser = CustomUser.objects.get(email=serializer.data['email'])
-        newToken = get_tokens(newUser)['access']
+        if gender is not None:
+            filter &= Q(gender=gender)
 
-        send_smtp(newUser, request, newToken, "Activate Account", "register_email.txt" )
+        filter &= Q(is_active=isActive)
+        filter &= Q(isDelete=isDeleted)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return CustomUser.objects.filter(filter)

@@ -44,15 +44,22 @@ class BookDetailView(generics.GenericAPIView):
 
     # Update Book By Id
     def put(self, request, bookId):
-        book = get_object_or_404(Book, pk=bookId)
-        serializer = self.get_serializer(instance=book, data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(updatedAt=timezone.now())
-        return Response({"message": "Update Book Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+        try:
+            if not request.user.is_staff:
+                return Response({"message": "Unauthorized for update book"}, status=status.HTTP_401_UNAUTHORIZED)
+            book = get_object_or_404(Book, pk=bookId)
+            serializer = self.get_serializer(instance=book, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(updatedAt=timezone.now())
+            return Response({"message": "Update Book Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+        except:
+            return Response({"message": "Update Book Failed"}, status=status.HTTP_401_UNAUTHORIZED)
 
     # Delete Book By Id
     def delete(self, request, bookId):
         try:
+            if not request.user.is_staff:
+                return Response({"message": "Unauthorized for delete book"}, status=status.HTTP_401_UNAUTHORIZED)
             book = get_object_or_404(Book, pk=bookId)
             book.delete()
             return Response({"message": "Delete Book Successfully"}, status=status.HTTP_200_OK)
@@ -68,11 +75,15 @@ class BookCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        try:
+            if not request.user.is_staff:
+                return Response({"message": "Unauthorized for create book"}, status=status.HTTP_401_UNAUTHORIZED)
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except:
+            return Response({"message": "Create Book Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
 """
 GET: Get All Books

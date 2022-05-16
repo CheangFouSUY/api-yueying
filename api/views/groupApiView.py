@@ -1,3 +1,4 @@
+from asyncio.windows_events import NULL
 import operator
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -36,7 +37,7 @@ class GroupDetailView(generics.GenericAPIView):
             group = get_object_or_404(Group, pk=groupId)
             members = userGroup.objects.filter(group=groupId).count()
             group.members = members
-            serializer = self.serializer_class(instance=group)
+            serializer = self.ger_serializer(instance=group)
             return Response(data=serializer.data ,status=status.HTTP_200_OK)
 
         except:
@@ -44,18 +45,18 @@ class GroupDetailView(generics.GenericAPIView):
 
     # Update Group By Id
     def put(self, request, groupId):
-        admin = userGroup.objects.filter(group=groupId, user=user, isAdmin=True)
+        admin = userGroup.objects.filter(group=groupId, user=request.user, isAdmin=True)
 
         if admin:
             group = get_object_or_404(Group, pk=groupId)
-            serializer = self.serializer_class(instance=group, data=request.data)
+            serializer = self.ger_serializer(instance=group, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(updatedAt=timezone.now())
             return Response({"message": "Update Group Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
 
     # Delete Group By Id
     def delete(self, request, groupId):
-        isMainAdmin = userGroup.objects.filter(group=groupId, user=user, isMainAdmin=True).first()
+        isMainAdmin = userGroup.objects.get(group=groupId, user=request.user, isMainAdmin=True).first()
         if isMainAdmin:
             try:
                 group = get_object_or_404(Group, pk=groupId)
@@ -93,26 +94,35 @@ class JoinLeaveGroupView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def post(self,request,groupId):
-        group = get_object_or_404(Group, pk=groupId)
-        data = {'user':request.user.id,'group':group.id}
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        try:
+            group = get_object_or_404(Group, pk=groupId)
+            member = userGroup.objects.filter(group=group, user=request.user)
+            if member:
+                return Response({"message": "User already join the group"}, status=status.HTTP_403_FORBIDDEN)
+            data = {'user':request.user.id,'group':group.id}
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({"message": "Join Group Successfully", "data":serializer.data}, status=status.HTTP_201_CREATED)
+        except:
+            return Response({"message": "Join Group Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, groupId):
-        user = request.user
-        isMember = userGroup.objects.filter(group=groupId, user=user)
-
+        isMember = userGroup.objects.get(group=groupId, user=request.user)
         if isMember:
             if not isMember.isMainAdmin:
+                if isMember.isBanned:
+                    if isMember.banDue > timezone.now():
+                        return Response({"message": "Leave Group Failed, You Are Banned From This Action"}, status=status.HTTP_403_FORBIDDEN)
+                    # If bandue is now, set isBanned to false
+                    isMember.isBanned = False
                 isMember.delete()
                 return Response({"message": "Leave Group Successfully"}, status=status.HTTP_200_OK)
             else:
-                return Response({"message": "Leave Group Failed,You Are Main Admin Of The Group"}, status=status.HTTP_403_FORBIDDEN)
+                return Response({"message": "Leave Group Failed, You Are Main Admin Of The Group"}, status=status.HTTP_403_FORBIDDEN)
         else:
-            return Response({"message": "Leave Group Failed,Not Group Member"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"message": "Leave Group Failed, Not Group Member"}, status=status.HTTP_401_UNAUTHORIZED)
 
 #################################### For members ####################################
 
@@ -123,13 +133,17 @@ class GroupFeedCreateView(generics.CreateAPIView):
     serializer_class = FeedCreateSerializer
 
     def post(self,request,groupId):
-        user = request.user
-        isMember = userGroup.objects.filter(group=groupId, user=user)
+        isMember = userGroup.objects.get(group=groupId, user=request.user)
         if isMember:
+            if isMember.isBanned and not isMember.isMainAdmin:
+                if isMember.banDue > timezone.now():
+                    return Response({"message": "Post Feed in Group Failed, You Are Banned From This Action"}, status=status.HTTP_403_FORBIDDEN)
+                # If bandue is now, set isBanned to fals
+                isMember.isBanned = False
             group = get_object_or_404(Group, pk=groupId)
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            serializer.save(createdBy=user, isPublic=False ,belongTo=group)
+            serializer.save(createdBy=request.user, isPublic=False ,belongTo=group)
 
             # add groupFeed
             group = get_object_or_404(Group, pk=groupId)
@@ -137,9 +151,8 @@ class GroupFeedCreateView(generics.CreateAPIView):
             groupfeed = groupFeed(group=group, feed=feed)
             groupfeed.save()
 
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response({"message": "Not Group Member."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"message": "Create Post Successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({"message": "Not Group Member."}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 '''
@@ -150,21 +163,24 @@ class GroupAdminRequestView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def post(self,request,groupId):
-        try:
-            user = request.user
-            isMember = userGroup.objects.filter(group=groupId, user=user,isAdmin=False)
-            if isMember:
-                record = groupAdminRequest.objects.filter(group=groupId, user=user).first()
-                data = {'user':user.id,'group':groupId,'result':0}
-                if record:
-                    serializer = self.get_serializer(instance=record,data=data)
-                else:
-                    serializer = self.get_serializer(data=data)
-                serializer.is_valid(raise_exception=True)
-                serializer.save(updatedAt=timezone.now())
+        user = request.user
+        isMember = userGroup.objects.get(group=groupId, user=user, isAdmin=False)
+        if isMember:
+            if isMember.isBanned and not isMember.isMainAdmin:
+                if isMember.banDue > timezone.now():
+                    return Response({"message": "Request Group Admin Failed, You Are Banned From This Action"}, status=status.HTTP_403_FORBIDDEN)
+                # If bandue is now, set isBanned to fals
+                isMember.isBanned = False
+            record = groupAdminRequest.objects.filter(group=groupId, user=user).first()
+            data = {'user':user.id,'group':groupId,'result':0}
+            if record:
+                serializer = self.get_serializer(instance=record,data=data)
+            else:
+                serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(updatedAt=timezone.now())
             return Response({"message": "Apply Group Admin Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
-        except:
-            return Response({"message": "Apply group admin Failed,Not Group Member or Is Admin Already"},status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"message": "Apply group admin Failed, Not Group Member or Is Admin Already"},status=status.HTTP_401_UNAUTHORIZED)
 
 ################################ Show ######################################
 ### Outside ###
@@ -181,7 +197,7 @@ class GroupbyCategoryView(generics.ListAPIView):
         for group in allGroups:
             members = userGroup.objects.filter(group=group).count()
             group.members = members
-
+        ordered = sorted(allGroups, key=operator.attrgetter('members'), reverse=True)
         return ordered
 
 '''
@@ -210,23 +226,23 @@ class GroupFeedListView(generics.ListAPIView):
     # Get All Group Feeds
     def get_queryset(self):
         group = self.kwargs['groupId']
-        category = self.request.GET.get('category') # p:pin / f:featured / n:normal
+        category = self.request.GET.get('category')
         search = self.request.GET.get('search')
 
         filter = Q()
-        filter &= Q(belongTo = group,groupfeed__group=group)
+        filter &= Q(isPublic=False, belongTo=group, groupfeed__group=group)
 
         if search is not None:
             searchTerms = search.split(' ')
             for term in searchTerms:
                 filter &= Q(title__icontains=term) | Q(description__icontains=term) | Q(createdBy__username__icontains=term)
-
+        
         if category == 'p':
             filter &= Q(groupfeed__isPin=True)
         elif category == 'f':
             filter &= Q(groupfeed__isFeatured=True)
         elif category == 'n':
-            filter &= Q(groupfeed__isPin=False,groupfeed__isFeatured=False)
+            filter &= Q(groupfeed__isPin=False, groupfeed__isFeatured=False)
 
         allFeeds = Feed.objects.filter(filter)
         for feed in allFeeds:
@@ -264,7 +280,6 @@ class GroupListView(generics.ListAPIView):
         if category is not None:
             filter &= Q(category=category)
 
-
         allGroups = Group.objects.filter(filter)
         for group in allGroups:
             members = userGroup.objects.filter(group=group).count()
@@ -279,9 +294,12 @@ class GroupMemberView(generics.ListAPIView):
     serializer_class = ListUserSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def get_queryset(self):
+    def get_queryset(self, request):
         group = self.kwargs['groupId']
         search = self.request.GET.get('search')
+        isMember = userGroup.objects.get(group=group, user=request.user)
+        if isMember is None:
+            return Response({"message": "Not Member of the Group"}, status=status.HTTP_403_FORBIDDEN)
 
         filter = Q()
         filter &= Q(usergroup__group=group)
@@ -309,10 +327,24 @@ class ShowRequestView(generics.ListAPIView):
     serializer_class = AdminRequestSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def get_queryset(self):
+    def get_queryset(self, request):
         group = self.kwargs['groupId']
-        allRequest = groupAdminRequest.objects.filter(group=group)
-        return allRequest
+        search = self.request.GET.get('search')
+        result = self.request.GET.get('result')
+        isAdmin = userGroup.objects.get(group=group, user=request.user, isAdmin=True)
+        if isAdmin:
+            filter = Q()
+            if search is not None:
+                searchTerms = search.split(' ')
+                for term in searchTerms:
+                    filter &= Q(user__username__icontains=term) | Q(group__groupName__icontains=term)
+            if result is None:
+                result = 0
+            filter &= Q(result=result, group=group)
+
+            allRequest = groupAdminRequest.objects.filter(filter)
+            return allRequest
+        return Response({"message": "Unauthorized for getting admin request report"}, status=status.HTTP_401_UNAUTHORIZED)
 
 '''
 GET:Show User Who Have Pending Admin Request

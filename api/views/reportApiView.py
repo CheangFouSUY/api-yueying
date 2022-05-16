@@ -29,16 +29,24 @@ class ReportDetailView(generics.GenericAPIView):
 
     # Update Report Status By Id
     def put(self, request, reportId):
-        report = get_object_or_404(Report, pk=reportId)
-        serializer = self.serializer_class(instance=report, data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({"message": "Update Report Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+        try:
+            report = get_object_or_404(Report, pk=reportId)
+            if not request.user.is_staff and request.user != report.createdBy:
+                    return Response({"message": "Unauthorized for update report"}, status=status.HTTP_401_UNAUTHORIZED)
+            serializer = self.serializer_class(instance=report, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({"message": "Update Report Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+        except:
+            return Response({"message": "Update Report Failed"}, status=status.HTTP_400_BAD_REQUEST)
+
 
     # Delete Report By Id
     def delete(self, request, reportId):
         try:
             report = get_object_or_404(Report, pk=reportId)
+            if not request.user.is_staff and request.user != report.createdBy:
+                return Response({"message": "Unauthorized for delete review"}, status=status.HTTP_401_UNAUTHORIZED)
             report.delete()
             return Response({"message": "Delete Report Successfully"}, status=status.HTTP_200_OK)
         except:
@@ -53,12 +61,15 @@ class ReportCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def post(self, request):
-        user = request.user
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(createdBy=user, result=False)
+        try:
+            user = request.user
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(createdBy=user, result=False)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except:
+            return Response({"message": "Create Report Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 """
 GET: Get All Reports

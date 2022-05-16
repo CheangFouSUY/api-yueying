@@ -42,16 +42,24 @@ class ReviewDetailView(generics.GenericAPIView):
 
     # Update Review By Id
     def put(self, request, reviewId):
-        review = get_object_or_404(Review, pk=reviewId)
-        serializer = self.get_serializer(instance=review, data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(updatedAt=timezone.now())
-        return Response({"message": "Update Review Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+        try:
+            review = get_object_or_404(Review, pk=reviewId)
+            if not request.user.is_staff and request.user != review.createdBy:
+                return Response({"message": "Unauthorized for update review"}, status=status.HTTP_401_UNAUTHORIZED)
+            serializer = self.get_serializer(instance=review, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(updatedAt=timezone.now())
+            return Response({"message": "Update Review Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+        except:
+            return Response({"message": "Update Review Failed"}, status=status.HTTP_400_BAD_REQUEST)
+
 
     # Delete Review By Id
     def delete(self, request, reviewId):
         try:
             review = get_object_or_404(Review, pk=reviewId)
+            if not request.user.is_staff and request.user != review.createdBy:
+                return Response({"message": "Unauthorized for delete review"}, status=status.HTTP_401_UNAUTHORIZED)
             review.delete()
             return Response({"message": "Delete Review Successfully"}, status=status.HTTP_200_OK)
         except:
@@ -66,12 +74,15 @@ class ReviewCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def post(self, request):
-        user = request.user
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(createdBy=user)
+        try:
+            user = request.user
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(createdBy=user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except:
+            return Response({"message": "Create Review Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 """

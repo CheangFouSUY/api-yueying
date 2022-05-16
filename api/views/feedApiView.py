@@ -44,16 +44,24 @@ class FeedDetailView(generics.GenericAPIView):
 
     # Update Feed By Id
     def put(self, request, feedId):
-        feed = get_object_or_404(Feed, pk=feedId)
-        serializer = self.get_serializer(instance=feed, data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(updatedAt=timezone.now())
-        return Response({"message": "Update Feed Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+        try:
+            feed = get_object_or_404(Feed, pk=feedId)
+            if not request.user.is_staff and request.user != feed.createdBy:
+                return Response({"message": "Unauthorized for update feed"}, status=status.HTTP_401_UNAUTHORIZED)
+            serializer = self.get_serializer(instance=feed, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(updatedAt=timezone.now())
+            return Response({"message": "Update Feed Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+        except:
+            return Response({"message": "Update Feed Failed"}, status=status.HTTP_400_BAD_REQUEST)
+
 
     # Delete Feed By Id
     def delete(self, request, feedId):
         try:
             feed = get_object_or_404(Feed, pk=feedId)
+            if not request.user.is_staff and request.user != feed.createdBy:
+                return Response({"message": "Unauthorized for delete feed"}, status=status.HTTP_401_UNAUTHORIZED)
             feed.delete()
             return Response({"message": "Delete Feed Successfully"}, status=status.HTTP_200_OK)
         except:
@@ -68,12 +76,15 @@ class FeedCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def post(self, request):
-        user = request.user
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(createdBy=user, isPublic=True)
+        try:
+            user = request.user
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(createdBy=user, isPublic=True)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except:
+            return Response({"message": "Create Feed Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 """
 GET: Get All Feeds
