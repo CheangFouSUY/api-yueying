@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework import generics, status, permissions
+from drf_yasg.utils import swagger_auto_schema
 
 from ..serializers.feedSerializers import *
 from ..serializers.userRelationsSerializers import userFeedDetailSerializer
@@ -27,6 +28,7 @@ class FeedDetailView(generics.GenericAPIView):
         return FeedDetailSerializer
 
     # Get Feed Detail By Id
+    @swagger_auto_schema(operation_summary="Get Feed Detail By Id")
     def get(self, request, feedId):
         try:
             feed = get_object_or_404(Feed, pk=feedId)
@@ -43,6 +45,7 @@ class FeedDetailView(generics.GenericAPIView):
             return Response({"message": "Get Feed Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Update Feed By Id
+    @swagger_auto_schema(operation_summary="Update Feed By Id")
     def put(self, request, feedId):
         try:
             feed = get_object_or_404(Feed, pk=feedId)
@@ -57,6 +60,7 @@ class FeedDetailView(generics.GenericAPIView):
 
 
     # Delete Feed By Id
+    @swagger_auto_schema(operation_summary="Delete Feed By Id")
     def delete(self, request, feedId):
         try:
             feed = get_object_or_404(Feed, pk=feedId)
@@ -75,6 +79,8 @@ class FeedCreateView(generics.CreateAPIView):
     serializer_class = FeedCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+
+    @swagger_auto_schema(operation_summary="Create Feed")
     def post(self, request):
         try:
             user = request.user
@@ -94,6 +100,7 @@ class FeedListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     # Get All Feeds
+    @swagger_auto_schema(operation_summary="Get All Feeds")
     def get_queryset(self):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
@@ -142,6 +149,7 @@ class FeedReactionView(generics.GenericAPIView):
     serializer_class = userFeedDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="React On Feed, ie. Likes, Dislikes")
     def put(self, request, feedId):
         feed = get_object_or_404(Feed, pk=feedId)
         try:

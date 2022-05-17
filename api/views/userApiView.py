@@ -1,10 +1,11 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.conf import settings
+from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework import generics, status, views, permissions
 from django.contrib.auth.hashers import make_password,check_password
-from django.db.models import Q
+from drf_yasg.utils import swagger_auto_schema
 
 import jwt
 from ..serializers.userSerializers import *
@@ -19,6 +20,7 @@ class UserRegisterView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = UserRegisterSerializer
 
+    @swagger_auto_schema(operation_summary="Register New User")
     def post(self, request):
         try:
             serializer = self.serializer_class(data=request.data)
@@ -41,6 +43,7 @@ class UserActivateView(views.APIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = UserActivateSerializer
 
+    @swagger_auto_schema(operation_summary="Activate User Account")
     def get(self, request):
         token = request.GET.get('token')
         try:
@@ -64,6 +67,7 @@ class RequestPasswordView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = RequestPasswordSerializer
 
+    @swagger_auto_schema(operation_summary="Request New Password Through Email")
     def post(self, request):
         try: 
             email = request.data.get('email', '')
@@ -86,6 +90,7 @@ class ResetPasswordTokenValidateView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = ResetPasswordSerializer
 
+    @swagger_auto_schema(operation_summary="Validate Token Of Request Password")
     def get(self, request):
         token = request.GET.get('token')
         try:
@@ -125,6 +130,7 @@ class ResetPasswordbyOldpasswordView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ResetPasswordByPasswordSerializer
 
+    @swagger_auto_schema(operation_summary="Reset Password Through Old Password")
     def put(self, request):
         try:
             oldpassword = request.data['oldpassword']
@@ -146,6 +152,7 @@ class ResetPasswordbyQuestionView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = ResetPasswordByQuestionSerializer
 
+    @swagger_auto_schema(operation_summary="Reset Password Through Answering Security Question")
     def put(self, request):
         try:
             username = request.data['username']
@@ -175,6 +182,7 @@ class ResetPasswordbyQuestionView(generics.GenericAPIView):
 class ResetSecurityQuestionView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(operation_summary="Reset Security Question And Answer")
     def put(self, request):
         try:
             password = request.data['password']
@@ -202,10 +210,14 @@ class LoginView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = LoginSerializer
 
+    @swagger_auto_schema(operation_summary="User Login")
     def post(self, request):
-            serializer = self.serializer_class(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            return Response(serializer.data, status= status.HTTP_200_OK)
+        print("data in login:", request.data)
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.data
+        data['message'] = "Login Successfully"
+        return Response(data,  status= status.HTTP_200_OK)
 
 """
 POST: Logout
@@ -214,6 +226,7 @@ class LogoutView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = LogoutSerializer
 
+    @swagger_auto_schema(operation_summary="User Logout")
     def post(self, request):
         try:
             # apparently no need to delete access token on logout, it should time out quickly enough anyway.
@@ -239,7 +252,7 @@ class UserDetailView(generics.GenericAPIView):
             return UserProfileSerializer
         return UserDetailSerializer
 
-
+    @swagger_auto_schema(operation_summary="Get User Detail By Id")
     def get(self, request, userId):
         try:
             user = CustomUser.objects.get(pk=userId)
@@ -254,6 +267,7 @@ class UserDetailView(generics.GenericAPIView):
         except:
             return Response({"message": "Get User Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(operation_summary="Update User By Id")
     def put(self, request, userId):
         try:
             user = get_object_or_404(CustomUser, pk=userId)
@@ -266,6 +280,7 @@ class UserDetailView(generics.GenericAPIView):
         except:
             return Response({"message": "Update User Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(operation_summary="Delete User By Id")
     def delete(self, request, userId):
         try:
             user = get_object_or_404(CustomUser, pk=userId)
@@ -281,10 +296,11 @@ class UserDetailView(generics.GenericAPIView):
 """
 POST: Create User (email, username)
 """
-class UserCreateView(generics.ListCreateAPIView):
+class UserCreateView(generics.CreateAPIView):
     serializer_class = UserCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Create User")
     def post(self, request): 
         try:
             if not request.user.is_staff:
@@ -306,10 +322,11 @@ class UserCreateView(generics.ListCreateAPIView):
 """
 GET: Get All Users
 """
-class UserListView(generics.ListCreateAPIView):
+class UserListView(generics.ListAPIView):
     serializer_class = ListUserSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Get All Users")
     def get_queryset(self):
         search = self.request.GET.get('search')
         isDeleted = self.request.GET.get('isDelete')

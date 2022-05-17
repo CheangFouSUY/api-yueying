@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework import generics, status, permissions
+from drf_yasg.utils import swagger_auto_schema
 
 from ..serializers.reviewSerializers import *
 from ..serializers.userRelationsSerializers import userReviewDetailSerializer
@@ -27,6 +28,7 @@ class ReviewDetailView(generics.GenericAPIView):
         return ReviewDetailSerializer
 
     # Get Review Detail By Id
+    @swagger_auto_schema(operation_summary="Get Review By Id")
     def get(self, request, reviewId):
         try:
             review = get_object_or_404(Review, pk=reviewId)
@@ -41,6 +43,7 @@ class ReviewDetailView(generics.GenericAPIView):
             return Response({"message": "Get Review Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Update Review By Id
+    @swagger_auto_schema(operation_summary="Update Review By Id")
     def put(self, request, reviewId):
         try:
             review = get_object_or_404(Review, pk=reviewId)
@@ -55,6 +58,7 @@ class ReviewDetailView(generics.GenericAPIView):
 
 
     # Delete Review By Id
+    @swagger_auto_schema(operation_summary="Delete Review By Id")
     def delete(self, request, reviewId):
         try:
             review = get_object_or_404(Review, pk=reviewId)
@@ -73,6 +77,7 @@ class ReviewCreateView(generics.CreateAPIView):
     serializer_class = ReviewCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Create Review")
     def post(self, request):
         try:
             user = request.user
@@ -93,6 +98,7 @@ class ReviewListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     # Get All Reviews
+    @swagger_auto_schema(operation_summary="Get All Reviews")
     def get_queryset(self):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
@@ -131,6 +137,7 @@ class ReviewReactionView(generics.GenericAPIView):
     serializer_class = userReviewDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="React On Review, ie. Likes, Dislikes")
     def put(self, request, reviewId):
         review = get_object_or_404(Review, pk=reviewId)
         try:

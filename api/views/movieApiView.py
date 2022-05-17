@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.db.models import Avg, Q
 from rest_framework.response import Response
 from rest_framework import generics, status, permissions
+from drf_yasg.utils import swagger_auto_schema
 
 
 from ..serializers.movieSerializers import *
@@ -28,6 +29,7 @@ class MovieDetailView(generics.GenericAPIView):
         return MovieDetailSerializer
 
     # Get Movie Detail By Id
+    @swagger_auto_schema(operation_summary="Get Movie Detail By Id")
     def get(self, request, movieId):
         try:
             movie = get_object_or_404(Movie, pk=movieId)
@@ -45,6 +47,7 @@ class MovieDetailView(generics.GenericAPIView):
             return Response({"message": "Get Movie Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Update Movie By Id
+    @swagger_auto_schema(operation_summary="Update Movie By Id")
     def put(self, request, movieId):
         try:
             if not request.user.is_staff:
@@ -58,6 +61,7 @@ class MovieDetailView(generics.GenericAPIView):
             return Response({"message": "Update Movie Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Delete Movie By Id
+    @swagger_auto_schema(operation_summary="Delete Movie By Id")
     def delete(self, request, movieId):
         try:
             if not request.user.is_staff:
@@ -76,6 +80,7 @@ class MovieCreateView(generics.CreateAPIView):
     serializer_class = MovieCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Create Movie By Id")
     def post(self, request):
         try:
             if not request.user.is_staff:
@@ -96,6 +101,7 @@ class MovieListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     # Get All Movies
+    @swagger_auto_schema(operation_summary="Get All Movies")
     def get_queryset(self):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
@@ -137,6 +143,7 @@ class MovieReactionView(generics.GenericAPIView):
     serializer_class = userMovieDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="React On Movie, ie. Likes, Dislikes, Rating")
     def put(self, request, movieId):
         movie = get_object_or_404(Movie, pk=movieId)
         try:

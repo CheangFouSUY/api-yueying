@@ -2,8 +2,8 @@ import operator
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.response import Response
-from rest_framework import generics, status, views, permissions
-from django.db.models import Q
+from rest_framework import generics, status, permissions
+from drf_yasg.utils import swagger_auto_schema
 
 from ..serializers.groupSerializers import *
 from ..serializers.groupRelationsSerializers import *
@@ -24,13 +24,14 @@ class AdminSetView(generics.GenericAPIView):
     serializer_class = UserGroupDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Set Group Admin Role")
     def put(self,request,groupId,userId,result):
         userAdmin = get_object_or_404(userGroup, group=groupId,user=request.user)
 
         if userAdmin.isAdmin:
             if userAdmin.isBanned and not userAdmin.isMainAdmin: # Main Admin can do anything
                 if userAdmin.banDue > timezone.now():
-                    return Response({"message": "Request Group Admin Failed, You Are Banned From This Action"}, status=status.HTTP_403_FORBIDDEN)
+                    return Response({"message": "Set Group Admin Failed, You Are Banned From This Action"}, status=status.HTTP_403_FORBIDDEN)
                 # If bandue is now, set isBanned to fals
                 userAdmin.isBanned = False
 
@@ -56,6 +57,7 @@ class AdminDeleteView(generics.GenericAPIView):
     serializer_class = UserGroupDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Remove Group Admin Role")
     def put(self,request,groupId,userId):
         user = request.user
         isMainAdmin = userGroup.objects.filter(group=groupId, user=user,isMainAdmin=True)
@@ -74,6 +76,7 @@ PUT:Switch Main Admin - only creator/main admin
 class MainAdminSwitchView(generics.GenericAPIView):
     serializer_class = UserGroupDetailSerializer
 
+    @swagger_auto_schema(operation_summary="Transfer Main Admin Role")
     def put(self,request,groupId,userId):
         user = request.user
         isMainAdmin = userGroup.objects.filter(group=groupId, user=user,isMainAdmin=True).first()
@@ -97,6 +100,7 @@ class PinnedFeedView(generics.GenericAPIView):
     serializer_class = GroupFeedDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Pin Feed In Group")
     def put(self,request,groupId,feedId):
         userAdmin = get_object_or_404(userGroup, group=groupId,user=request.user)
 
@@ -120,6 +124,7 @@ class UnpinFeedView(generics.GenericAPIView):
     serializer_class = GroupFeedDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Unpin Feed In Group")
     def put(self,request,groupId,feedId):
         userAdmin = get_object_or_404(userGroup, group=groupId,user=request.user)
         if userAdmin.isAdmin:
@@ -145,6 +150,7 @@ class FeaturedFeedView(generics.GenericAPIView):
     serializer_class = GroupFeedDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Set Featured Feed In Group")
     def put(self,request,groupId,feedId):
         userAdmin = get_object_or_404(userGroup, group=groupId,user=request.user)
 
@@ -168,6 +174,7 @@ class UnfeaturedFeedView(generics.GenericAPIView):
     serializer_class = GroupFeedDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Remove Featured Feed In Group")
     def put(self,request,groupId,feedId):
         userAdmin = get_object_or_404(userGroup, group=groupId,user=request.user)
 
@@ -195,6 +202,7 @@ class GroupFeedDeleteView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     # Delete Group Feed By Id
+    @swagger_auto_schema(operation_summary="Delete Group Feed By Id")
     def delete(self, request, groupId, feedId):
         user = get_object_or_404(userGroup, group=groupId, user=request.user)
         feed = get_object_or_404(Feed, pk=feedId)
@@ -218,6 +226,7 @@ class GroupMemberBanView(generics.GenericAPIView):
     serializer_class = UserGroupDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Ban Group Member, But Cannot Ban Group Main Admin")
     def put(self,request,groupId,userId):
         userAdmin = get_object_or_404(userGroup, group=groupId, user=request.user)
         if userAdmin.isAdmin:

@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.db.models import Avg, Q
 from rest_framework.response import Response
 from rest_framework import generics, status, permissions
+from drf_yasg.utils import swagger_auto_schema
 
 from ..serializers.bookSerializers import *
 from ..serializers.userRelationsSerializers import userBookDetailSerializer
@@ -26,6 +27,7 @@ class BookDetailView(generics.GenericAPIView):
         return BookDetailSerializer
 
     # Get Book Detail By Id
+    @swagger_auto_schema(operation_summary="Get Book Detail By Id")
     def get(self, request, bookId):
         try:
             book = get_object_or_404(Book, pk=bookId)
@@ -43,6 +45,7 @@ class BookDetailView(generics.GenericAPIView):
             return Response({"message": "Get Book Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Update Book By Id
+    @swagger_auto_schema(operation_summary="Update Book By Id")
     def put(self, request, bookId):
         try:
             if not request.user.is_staff:
@@ -56,6 +59,7 @@ class BookDetailView(generics.GenericAPIView):
             return Response({"message": "Update Book Failed"}, status=status.HTTP_401_UNAUTHORIZED)
 
     # Delete Book By Id
+    @swagger_auto_schema(operation_summary="Delete Book By Id")
     def delete(self, request, bookId):
         try:
             if not request.user.is_staff:
@@ -74,6 +78,7 @@ class BookCreateView(generics.CreateAPIView):
     serializer_class = BookCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Create Book")
     def post(self, request):
         try:
             if not request.user.is_staff:
@@ -93,6 +98,7 @@ class BookListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     # Get All Books
+    @swagger_auto_schema(operation_summary="Get All Books")
     def get_queryset(self):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
@@ -134,6 +140,7 @@ class BookReactionView(generics.GenericAPIView):
     serializer_class = userBookDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="React On Book, ie. Likes, Dislikes, Rating")
     def put(self, request, bookId):
         book = get_object_or_404(Book, pk=bookId)
         try:
