@@ -7,10 +7,10 @@ from rest_framework import generics, status, permissions
 from drf_yasg.utils import swagger_auto_schema
 
 from ..serializers.feedSerializers import *
-from ..serializers.userRelationsSerializers import userFeedDetailSerializer
+from ..serializers.userRelationsSerializers import UserFeedDetailSerializer
 from ..models.feeds import Feed
 from ..models.reviews import Review
-from ..models.userRelations import userFeed
+from ..models.userRelations import UserFeed
 
 
 """ For Admin(superuser)
@@ -33,14 +33,16 @@ class FeedDetailView(generics.GenericAPIView):
         try:
             feed = get_object_or_404(Feed, pk=feedId)
             allReviews = Review.objects.filter(feed=feed)
-            allUserFeeds = userFeed.objects.filter(feed=feed)
+            allUserFeeds = UserFeed.objects.filter(feed=feed)
             likes = allUserFeeds.filter(response='L').count()
             dislikes = allUserFeeds.filter(response='D').count()
             feed.likes = likes
             feed.dislikes = dislikes
             feed.allReviews = allReviews
             serializer = self.get_serializer(instance=feed)
-            return Response(data=serializer.data ,status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Get Feed Detail Successfully"
+            return Response(data, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Get Feed Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -54,7 +56,9 @@ class FeedDetailView(generics.GenericAPIView):
             serializer = self.get_serializer(instance=feed, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(updatedAt=timezone.now())
-            return Response({"message": "Update Feed Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Update Feed Successfully"
+            return Response(data, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Update Feed Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -87,7 +91,9 @@ class FeedCreateView(generics.CreateAPIView):
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(createdBy=user, isPublic=True)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            data = serializer.data
+            data['message'] = "Create Feed Successfully"
+            return Response(data, status=status.HTTP_201_CREATED)
         except:
             return Response({"message": "Create Feed Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -123,7 +129,7 @@ class FeedListView(generics.ListAPIView):
 
         allFeeds = Feed.objects.filter(filter)
         for feed in allFeeds:
-            allUserFeeds = userFeed.objects.filter(feed=feed)
+            allUserFeeds = UserFeed.objects.filter(feed=feed)
             reviewers = Review.objects.filter(feed=feed).count()
             likes = allUserFeeds.filter(response='L').count()
             dislikes = allUserFeeds.filter(response='D').count()
@@ -143,18 +149,18 @@ class FeedListView(generics.ListAPIView):
         return ordered
 
 """
-PUT: userFeed relation, uses for response and follow
+PUT: UserFeed relation, uses for response and follow
 """
 class FeedReactionView(generics.GenericAPIView):
-    serializer_class = userFeedDetailSerializer
+    serializer_class = UserFeedDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     @swagger_auto_schema(operation_summary="React On Feed, ie. Likes, Dislikes")
     def put(self, request, feedId):
         feed = get_object_or_404(Feed, pk=feedId)
         try:
-            tmpUserFeed = userFeed.objects.get(feed=feedId, user=request.user)  # get one
-        except userFeed.DoesNotExist:
+            tmpUserFeed = UserFeed.objects.get(feed=feedId, user=request.user)  # get one
+        except UserFeed.DoesNotExist:
             tmpUserFeed = None
         if tmpUserFeed:
             """
@@ -164,9 +170,13 @@ class FeedReactionView(generics.GenericAPIView):
             serializer = self.get_serializer(instance=tmpUserFeed, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(feed=feed, user=request.user, updatedAt=timezone.now())
-            return Response({"message": "Update userFeed Successfully"}, status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Update UserFeed Successfully"
+            return Response(data, status=status.HTTP_200_OK)
         else:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(feed=feed, user=request.user)
-            return Response({"message": "Add userFeed Successfully"}, status=status.HTTP_201_CREATED)
+            data = serializer.data
+            data['message'] = "Add UserFeed Successfully"
+            return Response(data, status=status.HTTP_201_CREATED)

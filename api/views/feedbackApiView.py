@@ -22,7 +22,9 @@ class FeedbackDetailView(generics.GenericAPIView):
         try:
             feedback = get_object_or_404(Feedback, pk=feedbackId)
             serializer = self.serializer_class(instance=feedback)
-            return Response(data=serializer.data ,status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Get Feedback Detail Successfully"
+            return Response(data, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Get Feedback Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -51,8 +53,9 @@ class FeedbackCreateView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(createdBy=user)
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        data = serializer.data
+        data['message'] = "Create Feedback Successfully"
+        return Response(data, status=status.HTTP_201_CREATED)
 
 """
 GET: Get All Feedbacks
@@ -75,4 +78,6 @@ class FeedbackListView(generics.ListAPIView):
         if category is not None:
             filter &= Q(category=category)
 
-        return Feedback.objects.filter(filter)
+        data = Feedback.objects.filter(filter)
+        data['message'] = "Get List Feedbacks Successfully"
+        return Response(data, status=status.HTTP_200_OK)

@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 
 #Feed belong to a group
-class groupFeed(models.Model):
+class GroupFeed(models.Model):
     feed = models.OneToOneField("Feed", on_delete=models.CASCADE, null=False, blank=False)
     group = models.ForeignKey("Group", on_delete=models.CASCADE, null=False, blank=False)
     isPin = models.BooleanField(default=False)
@@ -11,7 +11,7 @@ class groupFeed(models.Model):
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
 
-class groupAdminRequest(models.Model):
+class GroupAdminRequest(models.Model):
     RESULT = (
         (0, 'Pending'),
         (1, 'Accept'),

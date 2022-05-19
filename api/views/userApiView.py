@@ -31,10 +31,11 @@ class UserRegisterView(generics.GenericAPIView):
             newToken = get_tokens(newUser)['access']
 
             send_smtp(newUser, request, newToken, "Activate Account", "register_email.txt" )
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            data = serializer.data
+            data['message'] = "Register Account Successfully"
+            return Response(data, status=status.HTTP_201_CREATED)
         except:
-            return Response({"message": "Register Failed"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Register Account Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
 """
 GET: Activate Account
@@ -55,9 +56,9 @@ class UserActivateView(views.APIView):
                 user.save()
             return Response({"message": "Activate Account Successfully!"}, status=status.HTTP_200_OK)
         except jwt.ExpiredSignatureError:
-            return Response({"error": "Activation Code Expire"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Activation Code Expire"}, status=status.HTTP_400_BAD_REQUEST)
         except jwt.exceptions.DecodeError:
-            return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 """
@@ -102,26 +103,6 @@ class ResetPasswordTokenValidateView(generics.GenericAPIView):
             return Response({"message": "Reset Link Expire"}, status=status.HTTP_400_BAD_REQUEST)
         except jwt.exceptions.DecodeError:
             return Response({"message": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
-'''
-class ResetPasswordbyOldpasswordView(generics.GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = ResetPasswordSerializer
-
-    def put(self, request):
-        try:
-            oldpassword=request.data['oldpassword']
-            newpassword=request.data['newpassword']
-            username = request.user
-            user = CustomUser.objects.get(username=username)
-            result = user.check_password(oldpassword)
-            if result:
-                user.set_password(newpassword)
-                user.save()
-                # When update success, should terminate the token, so it cannot be used again
-                return Response({"message": "Password Reset Successfully"}, status=status.HTTP_200_OK)
-        except:
-            return Response({"message": "Password Reset Failed"}, status=status.HTTP_400_BAD_REQUEST)
-'''
 
 """
 PUT: Reset Password (for authenticated user only)
@@ -212,10 +193,18 @@ class LoginView(generics.GenericAPIView):
 
     @swagger_auto_schema(operation_summary="User Login")
     def post(self, request):
-        print("data in login:", request.data)
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        user = CustomUser.objects.get(username=serializer.data['username'])
         data = serializer.data
+        data['id'] = user.id
+        data['firstName'] = user.firstName or None
+        data['lastName'] = user.lastName or None
+        data['thumbnail'] = user.thumbnail or None
+        data['gender'] = user.gender or None
+        data['is_staff'] = user.is_staff
+        data['dob'] = user.dob or None
         data['message'] = "Login Successfully"
         return Response(data,  status= status.HTTP_200_OK)
 
@@ -233,7 +222,7 @@ class LogoutView(generics.GenericAPIView):
             # https://medium.com/devgorilla/how-to-log-out-when-using-jwt-a8c7823e8a6
             serializer = self.serializer_class(data=request.data)
             serializer.is_valid(raise_exception=True)
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response({"message": "Logout Successfully"}, status=status.HTTP_204_NO_CONTENT)
         except:
             return Response({"message": "Logout Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -256,14 +245,16 @@ class UserDetailView(generics.GenericAPIView):
     def get(self, request, userId):
         try:
             user = CustomUser.objects.get(pk=userId)
-            books = userBook.objects.filter(user=user, isSaved=True)
-            movies = userMovie.objects.filter(user=user, isSaved=True)
-            feeds = userFeed.objects.filter(user=user, isFollowed=True)
+            books = UserBook.objects.filter(user=user, isSaved=True)
+            movies = UserMovie.objects.filter(user=user, isSaved=True)
+            feeds = UserFeed.objects.filter(user=user, isFollowed=True)
             user.books = books;
             user.movies = movies;
             user.feeds = feeds;
             serializer=self.get_serializer(instance=user)
-            return Response(data=serializer.data ,status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Get User Detail Successfully"
+            return Response(data, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Get User Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -276,7 +267,9 @@ class UserDetailView(generics.GenericAPIView):
             serializer = self.get_serializer(instance=user, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(updatedAt=timezone.now())
-            return Response({"message": "Update User Successfully"}, status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Update User Successfully"
+            return Response(data, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Update User Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -313,8 +306,10 @@ class UserCreateView(generics.CreateAPIView):
             newToken = get_tokens(newUser)['access']
 
             send_smtp(newUser, request, newToken, "Activate Account", "register_email.txt" )
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+            data = serializer.data
+            data['message'] = "Create User Successfully"
+            return Response(data, status=status.HTTP_201_CREATED)
         except:
             return Response({"message": "Create User Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -348,6 +343,6 @@ class UserListView(generics.ListAPIView):
             filter &= Q(gender=gender)
 
         filter &= Q(is_active=isActive)
-        filter &= Q(isDelete=isDeleted)
+        filter &= Q(isDeleted=isDeleted)
 
         return CustomUser.objects.filter(filter)

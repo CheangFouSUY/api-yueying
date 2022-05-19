@@ -7,9 +7,9 @@ from rest_framework import generics, status, permissions
 from drf_yasg.utils import swagger_auto_schema
 
 from ..serializers.bookSerializers import *
-from ..serializers.userRelationsSerializers import userBookDetailSerializer
+from ..serializers.userRelationsSerializers import UserBookDetailSerializer
 from ..models.books import Book
-from ..models.userRelations import userBook
+from ..models.userRelations import UserBook
 
 
 """ For Admin(superuser)
@@ -31,7 +31,7 @@ class BookDetailView(generics.GenericAPIView):
     def get(self, request, bookId):
         try:
             book = get_object_or_404(Book, pk=bookId)
-            allUserBooks = userBook.objects.filter(book=book)
+            allUserBooks = UserBook.objects.filter(book=book)
             rating = allUserBooks.filter(isRated=True).aggregate(Avg('rateScore'))
             likes = allUserBooks.filter(response='L').count()
             dislikes = allUserBooks.filter(response='D').count()
@@ -40,7 +40,9 @@ class BookDetailView(generics.GenericAPIView):
             book.likes = likes
             book.dislikes = dislikes
             serializer = self.get_serializer(instance=book)
-            return Response(data=serializer.data ,status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Get Book Detail Successfully"
+            return Response(data ,status=status.HTTP_200_OK)
         except:
             return Response({"message": "Get Book Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -54,7 +56,9 @@ class BookDetailView(generics.GenericAPIView):
             serializer = self.get_serializer(instance=book, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(updatedAt=timezone.now())
-            return Response({"message": "Update Book Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Update Book Successfully"
+            return Response(data, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Update Book Failed"}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -86,7 +90,9 @@ class BookCreateView(generics.CreateAPIView):
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            data = serializer.data
+            data['message'] = "Create Book Successfully"
+            return Response(data, status=status.HTTP_201_CREATED)
         except:
             return Response({"message": "Create Book Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -114,7 +120,7 @@ class BookListView(generics.ListAPIView):
 
         allBooks = Book.objects.filter(filter)
         for book in allBooks:
-            allUserBooks = userBook.objects.filter(book=book)
+            allUserBooks = UserBook.objects.filter(book=book)
             rating = allUserBooks.filter(isRated=True).aggregate(Avg('rateScore'))
             likes = allUserBooks.filter(response='L').count()
             dislikes = allUserBooks.filter(response='D').count()
@@ -129,23 +135,22 @@ class BookListView(generics.ListAPIView):
         else:
             orderBy = 'rating'
         ordered = sorted(allBooks, key=operator.attrgetter(orderBy), reverse=True)
-
         return ordered
 
 
 """
-PUT: userBook relation, uses for response and bookmark
+PUT: UserBook relation, uses for response and bookmark
 """
 class BookReactionView(generics.GenericAPIView):
-    serializer_class = userBookDetailSerializer
+    serializer_class = UserBookDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     @swagger_auto_schema(operation_summary="React On Book, ie. Likes, Dislikes, Rating")
     def put(self, request, bookId):
         book = get_object_or_404(Book, pk=bookId)
         try:
-            tmpUserBook = userBook.objects.get(book=bookId, user=request.user)  # get one
-        except userBook.DoesNotExist:
+            tmpUserBook = UserBook.objects.get(book=bookId, user=request.user)  # get one
+        except UserBook.DoesNotExist:
             tmpUserBook = None
         rateScore = int(request.data['rateScore'])  # by default, it's a str
         isRated = True if rateScore > 0 else False
@@ -157,9 +162,13 @@ class BookReactionView(generics.GenericAPIView):
             serializer = self.get_serializer(instance=tmpUserBook, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(book=book, user=request.user, isRated=isRated, updatedAt=timezone.now())
-            return Response({"message": "Update userBook Successfully"}, status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Update UserBook Successfully"
+            return Response(data, status=status.HTTP_200_OK)
         else:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(book=book, user=request.user, isRated=isRated)
-            return Response({"message": "Add userBook Successfully"}, status=status.HTTP_201_CREATED)
+            data = serializer.data
+            data['message'] = "Add UserBook Successfully"
+            return Response(data, status=status.HTTP_201_CREATED)

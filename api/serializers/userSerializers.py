@@ -7,7 +7,7 @@ from rest_framework import serializers, status
 from rest_framework.validators import ValidationError
 from ..utils import get_tokens
 from ..models.users import CustomUser
-from .userRelationsSerializers import userBookDetailSerializer, userFeedDetailSerializer, userMovieDetailSerializer
+from .userRelationsSerializers import UserBookDetailSerializer, UserFeedDetailSerializer, UserMovieDetailSerializer
 from django.contrib.auth.hashers import make_password,check_password
 
 """
@@ -233,9 +233,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
 Serializer for User Profile, Use for Get Detail of User
 """
 class UserProfileSerializer(serializers.ModelSerializer):
-    books = userBookDetailSerializer(many=True)
-    movies = userMovieDetailSerializer(many=True)
-    feeds = userFeedDetailSerializer(many=True)
+    books = UserBookDetailSerializer(many=True)
+    movies = UserMovieDetailSerializer(many=True)
+    feeds = UserFeedDetailSerializer(many=True)
     class Meta:
         model = CustomUser
         # might need to have multiple models later on

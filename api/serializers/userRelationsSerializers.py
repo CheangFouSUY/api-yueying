@@ -8,9 +8,9 @@ from ..models.reviews import Review
 from ..models.users import CustomUser
 from ..models.userRelations import *
 
-class userBookDetailSerializer(serializers.ModelSerializer):
+class UserBookDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = userBook
+        model = UserBook
         # need modification later on when implement with multiple models
         fields = ['book', 'user', 'response', 'isSaved', 'isRated', 'rateScore', 'createdAt', 'updatedAt']
         extra_kwargs = {
@@ -22,9 +22,9 @@ class userBookDetailSerializer(serializers.ModelSerializer):
         }
 
 
-class userMovieDetailSerializer(serializers.ModelSerializer):
+class UserMovieDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = userMovie
+        model = UserMovie
         # need modification later on when implement with multiple models
         fields = ['movie', 'user', 'response', 'isSaved', 'isRated', 'rateScore', 'createdAt', 'updatedAt']
         extra_kwargs = {
@@ -35,9 +35,9 @@ class userMovieDetailSerializer(serializers.ModelSerializer):
         }
 
 
-class userFeedDetailSerializer(serializers.ModelSerializer):
+class UserFeedDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = userFeed
+        model = UserFeed
         # need modification later on when implement with multiple models
         fields = ['feed', 'user', 'response', 'isFollowed', 'createdAt', 'updatedAt']
         extra_kwargs = {
@@ -47,9 +47,9 @@ class userFeedDetailSerializer(serializers.ModelSerializer):
             'updatedAt': {'read_only': True},
         }
 
-class userReviewDetailSerializer(serializers.ModelSerializer):
+class UserReviewDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = userReview
+        model = UserReview
         # need modification later on when implement with multiple models
         fields = ['review', 'user', 'response', 'createdAt', 'updatedAt']
         extra_kwargs = {
