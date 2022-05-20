@@ -4,13 +4,14 @@ from django.utils import timezone
 from django.db.models import Avg, Q
 from rest_framework.response import Response
 from rest_framework import generics, status, permissions
+from drf_yasg.utils import swagger_auto_schema
 
 
 from ..serializers.movieSerializers import *
-from ..serializers.userRelationsSerializers import userMovieDetailSerializer
+from ..serializers.userRelationsSerializers import UserMovieDetailSerializer
 from ..utils import *
 from ..models.movies import Movie
-from ..models.userRelations import userMovie
+from ..models.userRelations import UserMovie
 
 
 """ For Admin(superuser)
@@ -28,10 +29,11 @@ class MovieDetailView(generics.GenericAPIView):
         return MovieDetailSerializer
 
     # Get Movie Detail By Id
+    @swagger_auto_schema(operation_summary="Get Movie Detail By Id")
     def get(self, request, movieId):
         try:
             movie = get_object_or_404(Movie, pk=movieId)
-            allUserMovies = userMovie.objects.filter(movie=movie)
+            allUserMovies = UserMovie.objects.filter(movie=movie)
             rating = allUserMovies.filter(isRated=True).aggregate(Avg('rateScore'))
             likes = allUserMovies.filter(response='L').count()
             dislikes = allUserMovies.filter(response='D').count()
@@ -40,11 +42,14 @@ class MovieDetailView(generics.GenericAPIView):
             movie.likes = likes
             movie.dislikes = dislikes
             serializer = self.get_serializer(instance=movie)
-            return Response(data=serializer.data ,status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Get Movie Detail Successfully"
+            return Response(data, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Get Movie Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Update Movie By Id
+    @swagger_auto_schema(operation_summary="Update Movie By Id")
     def put(self, request, movieId):
         try:
             if not request.user.is_staff:
@@ -53,11 +58,14 @@ class MovieDetailView(generics.GenericAPIView):
             serializer = self.get_serializer(instance=movie, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(updatedAt=timezone.now())
-            return Response({"message": "Update Movie Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Update Movie Successfully"
+            return Response(data, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Update Movie Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Delete Movie By Id
+    @swagger_auto_schema(operation_summary="Delete Movie By Id")
     def delete(self, request, movieId):
         try:
             if not request.user.is_staff:
@@ -76,6 +84,7 @@ class MovieCreateView(generics.CreateAPIView):
     serializer_class = MovieCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Create Movie By Id")
     def post(self, request):
         try:
             if not request.user.is_staff:
@@ -83,7 +92,9 @@ class MovieCreateView(generics.CreateAPIView):
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            data = serializer.data
+            data['message'] = "Create Movie Successfully"
+            return Response(data, status=status.HTTP_201_CREATED)
         except:
             return Response({"message": "Create Movie Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -96,6 +107,7 @@ class MovieListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     # Get All Movies
+    @swagger_auto_schema(operation_summary="Get All Movies")
     def get_queryset(self):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
@@ -111,7 +123,7 @@ class MovieListView(generics.ListAPIView):
 
         allMovies = Movie.objects.filter(filter)
         for movie in allMovies:
-            allUserMovies = userMovie.objects.filter(movie=movie)
+            allUserMovies = UserMovie.objects.filter(movie=movie)
             rating = allUserMovies.filter(isRated=True).aggregate(Avg('rateScore'))
             likes = allUserMovies.filter(response='L').count()
             dislikes = allUserMovies.filter(response='D').count()
@@ -131,17 +143,18 @@ class MovieListView(generics.ListAPIView):
 
 
 """
-PUT: userMovie relation, uses for response and save
+PUT: UserMovie relation, uses for response and save
 """
 class MovieReactionView(generics.GenericAPIView):
-    serializer_class = userMovieDetailSerializer
+    serializer_class = UserMovieDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="React On Movie, ie. Likes, Dislikes, Rating")
     def put(self, request, movieId):
         movie = get_object_or_404(Movie, pk=movieId)
         try:
-            tmpUserMovie = userMovie.objects.get(movie=movieId, user=request.user)  # get one
-        except userMovie.DoesNotExist:
+            tmpUserMovie = UserMovie.objects.get(movie=movieId, user=request.user)  # get one
+        except UserMovie.DoesNotExist:
             tmpUserMovie = None
         rateScore = int(request.data['rateScore'])  # by default, it's a str
         isRated = True if rateScore > 0 else False
@@ -153,9 +166,13 @@ class MovieReactionView(generics.GenericAPIView):
             serializer = self.get_serializer(instance=tmpUserMovie, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(movie=movie, user=request.user, isRated=isRated, updatedAt=timezone.now())
-            return Response({"message": "Update userMovie Successfully"}, status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Update UserMovie Successfully"
+            return Response(data, status=status.HTTP_200_OK)
         else:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(movie=movie, user=request.user, isRated=isRated)
-            return Response({"message": "Add userMovie Successfully"}, status=status.HTTP_201_CREATED)
+            data = serializer.data
+            data['message'] = "Add UserMovie Successfully"
+            return Response(data, status=status.HTTP_201_CREATED)

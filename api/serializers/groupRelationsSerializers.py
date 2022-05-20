@@ -2,12 +2,12 @@ from rest_framework import serializers
 from ..utils import *
 from ..models.feeds import Feed
 from ..models.groupRelations import *
-from ..models.userRelations import userGroup
+from ..models.userRelations import UserGroup
 
 
 class GroupFeedDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = groupFeed
+        model = GroupFeed
         fields = ['feed', 'group', 'isPin', 'isFeatured', 'createdAt', 'updatedAt']
         extra_kwargs = {
             'feed': {'read_only': True},
@@ -18,7 +18,7 @@ class GroupFeedDetailSerializer(serializers.ModelSerializer):
 
 class UserGroupDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = userGroup
+        model = UserGroup
         fields = '__all__'
         extra_kwargs = {
             'group': {'read_only': True},
@@ -29,7 +29,7 @@ class UserGroupDetailSerializer(serializers.ModelSerializer):
 
 class UserGroupJoinSerializer(serializers.ModelSerializer):
     class Meta:
-        model = userGroup
+        model = UserGroup
         fields = ['user','group','createdAt']
 
     def validate(self, attrs):
@@ -37,7 +37,7 @@ class UserGroupJoinSerializer(serializers.ModelSerializer):
 
 class AdminRequestSerializer(serializers.ModelSerializer):
     class Meta:
-        model = groupAdminRequest
+        model = GroupAdminRequest
         fields = '__all__'
 
     extra_kwargs = {

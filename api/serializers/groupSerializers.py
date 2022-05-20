@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework.validators import ValidationError
 from ..utils import *
 from ..models.groups import Group
-from ..models.userRelations import userGroup
+from ..models.userRelations import UserGroup
 """
 Serializer class for Group Detail
 """

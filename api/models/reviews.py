@@ -10,7 +10,10 @@ class Review(models.Model):
     img = models.ImageField(upload_to="uploads/reviews", blank=True)
     isDeleted = models.BooleanField(default=False)
     createdBy = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
-    feed = models.ForeignKey("Feed", on_delete=models.CASCADE, null=False, blank=False)
+    feed = models.ForeignKey("Feed", on_delete=models.CASCADE, null=True, blank=False, default=None)
+    book = models.ForeignKey("Book", on_delete=models.CASCADE, null=True, blank=False, default=None)
+    movie = models.ForeignKey("Movie", on_delete=models.CASCADE, null=True, blank=False, default=None)
+
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
 

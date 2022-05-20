@@ -4,9 +4,10 @@ from django.utils import timezone
 from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework import generics, status, permissions
+from drf_yasg.utils import swagger_auto_schema
 
 from ..serializers.reviewSerializers import *
-from ..serializers.userRelationsSerializers import userReviewDetailSerializer
+from ..serializers.userRelationsSerializers import UserReviewDetailSerializer
 from ..utils import *
 from ..models.reviews import Review
 from ..models.userRelations import *
@@ -27,20 +28,24 @@ class ReviewDetailView(generics.GenericAPIView):
         return ReviewDetailSerializer
 
     # Get Review Detail By Id
+    @swagger_auto_schema(operation_summary="Get Review By Id")
     def get(self, request, reviewId):
         try:
             review = get_object_or_404(Review, pk=reviewId)
-            allUserReviews = userReview.objects.filter(review=review)
+            allUserReviews = UserReview.objects.filter(review=review)
             likes = allUserReviews.filter(response='L').count()
             dislikes = allUserReviews.filter(response='D').count()
             review.likes = likes
             review.dislikes = dislikes
             serializer = self.get_serializer(instance=review)
-            return Response(data=serializer.data ,status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Get Review Detail Successfully"
+            return Response(data, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Get Review Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Update Review By Id
+    @swagger_auto_schema(operation_summary="Update Review By Id")
     def put(self, request, reviewId):
         try:
             review = get_object_or_404(Review, pk=reviewId)
@@ -49,12 +54,15 @@ class ReviewDetailView(generics.GenericAPIView):
             serializer = self.get_serializer(instance=review, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(updatedAt=timezone.now())
-            return Response({"message": "Update Review Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Update Review Successfully"
+            return Response(data, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Update Review Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
 
     # Delete Review By Id
+    @swagger_auto_schema(operation_summary="Delete Review By Id")
     def delete(self, request, reviewId):
         try:
             review = get_object_or_404(Review, pk=reviewId)
@@ -73,13 +81,20 @@ class ReviewCreateView(generics.CreateAPIView):
     serializer_class = ReviewCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Create Review")
     def post(self, request):
         try:
             user = request.user
-            serializer = self.get_serializer(data=request.data)
+            data = request.data
+            data.feed = request.data['feed'] or None
+            data.book = request.data['book'] or None
+            data.movie = request.data['movie'] or None
+            serializer = self.get_serializer(data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save(createdBy=user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            data = serializer.data
+            data['message'] = "Create Review Successfully"
+            return Response(data, status=status.HTTP_201_CREATED)
         except:
             return Response({"message": "Create Review Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -93,6 +108,7 @@ class ReviewListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     # Get All Reviews
+    @swagger_auto_schema(operation_summary="Get All Reviews")
     def get_queryset(self):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
@@ -108,7 +124,7 @@ class ReviewListView(generics.ListAPIView):
             
         allReviews = Review.objects.filter(filter)
         for review in allReviews:
-            allUserReviews = userReview.objects.filter(review=review)
+            allUserReviews = UserReview.objects.filter(review=review)
             likes = allUserReviews.filter(response='L').count()
             dislikes = allUserReviews.filter(response='D').count()
             review.likes = likes
@@ -125,17 +141,18 @@ class ReviewListView(generics.ListAPIView):
 
 
 """
-PUT: userReview relation, uses for response
+PUT: UserReview relation, uses for response
 """
 class ReviewReactionView(generics.GenericAPIView):
-    serializer_class = userReviewDetailSerializer
+    serializer_class = UserReviewDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="React On Review, ie. Likes, Dislikes")
     def put(self, request, reviewId):
         review = get_object_or_404(Review, pk=reviewId)
         try:
-            tmpUserReview = userReview.objects.get(review=reviewId, user=request.user)  # get one
-        except userReview.DoesNotExist:
+            tmpUserReview = UserReview.objects.get(review=reviewId, user=request.user)  # get one
+        except UserReview.DoesNotExist:
             tmpUserReview = None
         if tmpUserReview:
             """
@@ -145,9 +162,13 @@ class ReviewReactionView(generics.GenericAPIView):
             serializer = self.get_serializer(instance=tmpUserReview, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(review=review, user=request.user, updatedAt=timezone.now())
-            return Response({"message": "Update userReview Successfully"}, status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Update UserReview Successfully"
+            return Response(data, status=status.HTTP_200_OK)
         else:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(review=review, user=request.user)
-            return Response({"message": "Add userReview Successfully"}, status=status.HTTP_201_CREATED)
+            data = serializer.data
+            data['message'] = "Add UserReview Successfully"
+            return Response(data, status=status.HTTP_201_CREATED)

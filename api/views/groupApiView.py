@@ -2,9 +2,10 @@ from asyncio.windows_events import NULL
 import operator
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework.response import Response
-from rest_framework import generics, status, views, permissions
 from django.db.models import Q
+from rest_framework.response import Response
+from rest_framework import generics, status, permissions
+from drf_yasg.utils import swagger_auto_schema
 
 from ..serializers.groupSerializers import *
 from ..serializers.groupRelationsSerializers import *
@@ -32,31 +33,38 @@ class GroupDetailView(generics.GenericAPIView):
         return GroupDetailSerializer
 
     # Get Group Detail By Id
+    @swagger_auto_schema(operation_summary="Get Group Detail By Id")
     def get(self, request, groupId):
         try:
             group = get_object_or_404(Group, pk=groupId)
-            members = userGroup.objects.filter(group=groupId).count()
+            members = UserGroup.objects.filter(group=groupId).count()
             group.members = members
             serializer = self.ger_serializer(instance=group)
-            return Response(data=serializer.data ,status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Get Group Detail Successfully"
+            return Response(data, status=status.HTTP_200_OK)
 
         except:
             return Response({"message": "Get Group Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Update Group By Id
+    @swagger_auto_schema(operation_summary="Update Group By Id")
     def put(self, request, groupId):
-        admin = userGroup.objects.filter(group=groupId, user=request.user, isAdmin=True)
+        admin = UserGroup.objects.filter(group=groupId, user=request.user, isAdmin=True)
 
         if admin:
             group = get_object_or_404(Group, pk=groupId)
             serializer = self.ger_serializer(instance=group, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(updatedAt=timezone.now())
-            return Response({"message": "Update Group Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Update Group Successfully"
+            return Response(data, status=status.HTTP_200_OK)
 
     # Delete Group By Id
+    @swagger_auto_schema(operation_summary="Delete Group By Id")
     def delete(self, request, groupId):
-        isMainAdmin = userGroup.objects.get(group=groupId, user=request.user, isMainAdmin=True).first()
+        isMainAdmin = UserGroup.objects.get(group=groupId, user=request.user, isMainAdmin=True).first()
         if isMainAdmin:
             try:
                 group = get_object_or_404(Group, pk=groupId)
@@ -72,18 +80,20 @@ class GroupCreateView(generics.CreateAPIView):
     serializer_class = GroupCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Create Group")
     def post(self, request):
         user = request.user
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(createdBy=user)
 
-        #add userGroup
+        #add newUserGroup
         group = get_object_or_404(Group, pk=serializer.data["id"])
-        usergroup = userGroup(group=group, user=request.user,isAdmin=True,isMainAdmin=True)
-        usergroup.save()
-
-        return Response(serializer.data,status=status.HTTP_201_CREATED)
+        newUsergroup = UserGroup(group=group, user=request.user,isAdmin=True,isMainAdmin=True)
+        newUsergroup.save()
+        data = serializer.data
+        data['message'] = "Create Group Successfully"
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
 '''
@@ -93,23 +103,26 @@ class JoinLeaveGroupView(generics.GenericAPIView):
     serializer_class = UserGroupJoinSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Join Group")
     def post(self,request,groupId):
         try:
             group = get_object_or_404(Group, pk=groupId)
-            member = userGroup.objects.filter(group=group, user=request.user)
+            member = UserGroup.objects.filter(group=group, user=request.user)
             if member:
                 return Response({"message": "User already join the group"}, status=status.HTTP_403_FORBIDDEN)
             data = {'user':request.user.id,'group':group.id}
             serializer = self.get_serializer(data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response({"message": "Join Group Successfully", "data":serializer.data}, status=status.HTTP_201_CREATED)
+            data = serializer.data
+            data['message'] = "Join Group Successfully"
+            return Response(data, status=status.HTTP_201_CREATED)
         except:
             return Response({"message": "Join Group Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
-
+    @swagger_auto_schema(operation_summary="Leave Group, Cannot Leave If isBanned")
     def delete(self, request, groupId):
-        isMember = userGroup.objects.get(group=groupId, user=request.user)
+        isMember = UserGroup.objects.get(group=groupId, user=request.user)
         if isMember:
             if not isMember.isMainAdmin:
                 if isMember.isBanned:
@@ -132,8 +145,9 @@ POST: Create Feed in Group
 class GroupFeedCreateView(generics.CreateAPIView):
     serializer_class = FeedCreateSerializer
 
+    @swagger_auto_schema(operation_summary="Create Feed In Group, Cannot Create If isBanned")
     def post(self,request,groupId):
-        isMember = userGroup.objects.get(group=groupId, user=request.user)
+        isMember = UserGroup.objects.get(group=groupId, user=request.user)
         if isMember:
             if isMember.isBanned and not isMember.isMainAdmin:
                 if isMember.banDue > timezone.now():
@@ -145,13 +159,14 @@ class GroupFeedCreateView(generics.CreateAPIView):
             serializer.is_valid(raise_exception=True)
             serializer.save(createdBy=request.user, isPublic=False ,belongTo=group)
 
-            # add groupFeed
+            # add GroupFeed
             group = get_object_or_404(Group, pk=groupId)
             feed = get_object_or_404(Feed, pk=serializer.data["id"])
-            groupfeed = groupFeed(group=group, feed=feed)
-            groupfeed.save()
-
-            return Response({"message": "Create Post Successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
+            Groupfeed = GroupFeed(group=group, feed=feed)
+            Groupfeed.save()
+            data = serializer.data
+            data['message'] = "Create Feed Successfully"
+            return Response(data, status=status.HTTP_201_CREATED)
         return Response({"message": "Not Group Member."}, status=status.HTTP_401_UNAUTHORIZED)
 
 
@@ -162,16 +177,17 @@ class GroupAdminRequestView(generics.CreateAPIView):
     serializer_class = AdminRequestSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Request For Group Admin Role")
     def post(self,request,groupId):
         user = request.user
-        isMember = userGroup.objects.get(group=groupId, user=user, isAdmin=False)
+        isMember = UserGroup.objects.get(group=groupId, user=user, isAdmin=False)
         if isMember:
             if isMember.isBanned and not isMember.isMainAdmin:
                 if isMember.banDue > timezone.now():
                     return Response({"message": "Request Group Admin Failed, You Are Banned From This Action"}, status=status.HTTP_403_FORBIDDEN)
                 # If bandue is now, set isBanned to fals
                 isMember.isBanned = False
-            record = groupAdminRequest.objects.filter(group=groupId, user=user).first()
+            record = GroupAdminRequest.objects.filter(group=groupId, user=user).first()
             data = {'user':user.id,'group':groupId,'result':0}
             if record:
                 serializer = self.get_serializer(instance=record,data=data)
@@ -179,8 +195,10 @@ class GroupAdminRequestView(generics.CreateAPIView):
                 serializer = self.get_serializer(data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save(updatedAt=timezone.now())
-            return Response({"message": "Apply Group Admin Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
-        return Response({"message": "Apply group admin Failed, Not Group Member or Is Admin Already"},status=status.HTTP_401_UNAUTHORIZED)
+            data = serializer.data
+            data['message'] = "Apply Group Admin Successfully"
+            return Response(data, status=status.HTTP_200_OK)
+        return Response({"message": "Apply group admin Failed, Not Group Member or Is Admin Already"}, status=status.HTTP_401_UNAUTHORIZED)
 
 ################################ Show ######################################
 ### Outside ###
@@ -191,11 +209,12 @@ class GroupbyCategoryView(generics.ListAPIView):
     serializer_class = ListGroupSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Get All Groups By Category")
     def get_queryset(self):
         type = self.kwargs['category']
         allGroups = Group.objects.filter(category=type)
         for group in allGroups:
-            members = userGroup.objects.filter(group=group).count()
+            members = UserGroup.objects.filter(group=group).count()
             group.members = members
         ordered = sorted(allGroups, key=operator.attrgetter('members'), reverse=True)
         return ordered
@@ -207,10 +226,11 @@ class ShowUserGroupView(generics.ListAPIView):
     serializer_class = ListGroupSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Get All Group Joined By User")
     def get_queryset(self):
         allGroups = Group.objects.filter(usergroup__user=self.request.user)
         for group in allGroups:
-            members = userGroup.objects.filter(group=group).count()
+            members = UserGroup.objects.filter(group=group).count()
             group.members = members
         ordered = sorted(allGroups, key=operator.attrgetter('members'), reverse=True)
         return ordered
@@ -224,6 +244,7 @@ class GroupFeedListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     # Get All Group Feeds
+    @swagger_auto_schema(operation_summary="Get All Group Feeds")
     def get_queryset(self):
         group = self.kwargs['groupId']
         category = self.request.GET.get('category')
@@ -246,7 +267,7 @@ class GroupFeedListView(generics.ListAPIView):
 
         allFeeds = Feed.objects.filter(filter)
         for feed in allFeeds:
-            allUserFeeds = userFeed.objects.filter(feed=feed)
+            allUserFeeds = UserFeed.objects.filter(feed=feed)
             reviewers = Review.objects.filter(feed=feed).count()
             likes = allUserFeeds.filter(response='L').count()
             dislikes = allUserFeeds.filter(response='D').count()
@@ -266,6 +287,7 @@ class GroupListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     # Get All Groups
+    @swagger_auto_schema(operation_summary="Get All Groups")
     def get_queryset(self):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
@@ -282,7 +304,7 @@ class GroupListView(generics.ListAPIView):
 
         allGroups = Group.objects.filter(filter)
         for group in allGroups:
-            members = userGroup.objects.filter(group=group).count()
+            members = UserGroup.objects.filter(group=group).count()
             group.members = members
         ordered = sorted(allGroups, key=operator.attrgetter('members'), reverse=True)
         return ordered
@@ -294,10 +316,11 @@ class GroupMemberView(generics.ListAPIView):
     serializer_class = ListUserSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Get All Group Members In A Group")
     def get_queryset(self, request):
         group = self.kwargs['groupId']
         search = self.request.GET.get('search')
-        isMember = userGroup.objects.get(group=group, user=request.user)
+        isMember = UserGroup.objects.get(group=group, user=request.user)
         if isMember is None:
             return Response({"message": "Not Member of the Group"}, status=status.HTTP_403_FORBIDDEN)
 
@@ -310,7 +333,7 @@ class GroupMemberView(generics.ListAPIView):
 
         allMember = CustomUser.objects.filter(filter)
         for member in allMember:
-            admin = userGroup.objects.filter(user=member, group=group).first()
+            admin = UserGroup.objects.filter(user=member, group=group).first()
             if admin.isMainAdmin:
                 member.isAdmin = 0
             elif admin.isAdmin:
@@ -327,11 +350,12 @@ class ShowRequestView(generics.ListAPIView):
     serializer_class = AdminRequestSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Get All Admin Requests")
     def get_queryset(self, request):
         group = self.kwargs['groupId']
         search = self.request.GET.get('search')
         result = self.request.GET.get('result')
-        isAdmin = userGroup.objects.get(group=group, user=request.user, isAdmin=True)
+        isAdmin = UserGroup.objects.get(group=group, user=request.user, isAdmin=True)
         if isAdmin:
             filter = Q()
             if search is not None:
@@ -342,7 +366,7 @@ class ShowRequestView(generics.ListAPIView):
                 result = 0
             filter &= Q(result=result, group=group)
 
-            allRequest = groupAdminRequest.objects.filter(filter)
+            allRequest = GroupAdminRequest.objects.filter(filter)
             return allRequest
         return Response({"message": "Unauthorized for getting admin request report"}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -353,6 +377,7 @@ class ShowRequestUserView(generics.ListAPIView):
     serializer_class = ListUserSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Get User With Pending Admin Request")
     def get_queryset(self):
         group = self.kwargs['groupId']
         allUser = CustomUser.objects.filter(groupadminrequest__result=0,groupadminrequest__group=group)

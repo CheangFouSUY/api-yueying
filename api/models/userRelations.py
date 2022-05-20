@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 
 #Book like/dislike by user
-class userBook(models.Model):
+class UserBook(models.Model):
     CHOICE=(
         ('O', 'Other'),
         ('L', 'Like'),
@@ -18,7 +18,7 @@ class userBook(models.Model):
     updatedAt = models.DateTimeField(default=timezone.now)
 
 #Movie like/dislike by user
-class userMovie(models.Model):
+class UserMovie(models.Model):
     CHOICE=(
         ('O', 'Other'),
         ('L', 'Like'),
@@ -34,7 +34,7 @@ class userMovie(models.Model):
     updatedAt = models.DateTimeField(default=timezone.now)
 
 #Feed followed,like/dislike by user
-class userFeed(models.Model):
+class UserFeed(models.Model):
     CHOICE=(
         ('O', 'Other'),
         ('L', 'Like'),
@@ -48,7 +48,7 @@ class userFeed(models.Model):
     updatedAt = models.DateTimeField(default=timezone.now)
 
 #Review like/dislike by user
-class userReview(models.Model):
+class UserReview(models.Model):
     CHOICE=(
         ('O', 'Other'),
         ('L', 'Like'),
@@ -61,7 +61,7 @@ class userReview(models.Model):
     updatedAt = models.DateTimeField(default=timezone.now)
 
 #Group joined by user
-class userGroup(models.Model):
+class UserGroup(models.Model):
     group = models.ForeignKey("Group", on_delete=models.CASCADE, null=False, blank=False)
     user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
     isAdmin = models.BooleanField(default=False)

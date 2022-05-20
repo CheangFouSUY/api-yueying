@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework import generics, status, permissions
+from drf_yasg.utils import swagger_auto_schema
 
 from ..serializers.reportSerializers import *
 
@@ -19,15 +20,19 @@ class ReportDetailView(generics.GenericAPIView):
     permissions_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     # Get Report Detail By Id
+    @swagger_auto_schema(operation_summary="Get Report By Id")
     def get(self, request, reportId):
         try:
             report = get_object_or_404(Report, pk=reportId)
             serializer = self.serializer_class(instance=report)
-            return Response(data=serializer.data ,status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Get Report Detail Successfully"
+            return Response(data, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Get Report Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Update Report Status By Id
+    @swagger_auto_schema(operation_summary="Update Report By Id")
     def put(self, request, reportId):
         try:
             report = get_object_or_404(Report, pk=reportId)
@@ -36,12 +41,15 @@ class ReportDetailView(generics.GenericAPIView):
             serializer = self.serializer_class(instance=report, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response({"message": "Update Report Successfully", "data": serializer.data}, status=status.HTTP_200_OK)
+            data = serializer.data
+            data['message'] = "Update Report Successfully"
+            return Response(data, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Update Report Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
 
     # Delete Report By Id
+    @swagger_auto_schema(operation_summary="Delete Reposrt By Id")
     def delete(self, request, reportId):
         try:
             report = get_object_or_404(Report, pk=reportId)
@@ -60,13 +68,16 @@ class ReportCreateView(generics.CreateAPIView):
     serializer_class = ReportCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @swagger_auto_schema(operation_summary="Get All Books")
     def post(self, request):
         try:
             user = request.user
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(createdBy=user, result=False)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            data = serializer.data
+            data['message'] = "Create Report Successfully"
+            return Response(data, status=status.HTTP_201_CREATED)
         except:
             return Response({"message": "Create Report Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -79,6 +90,7 @@ class ReportListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     # Get All Reports
+    @swagger_auto_schema(operation_summary="Get All Reports")
     def get_queryset(self):
         search = self.request.GET.get('search')
         category = self.request.GET.get('category')
