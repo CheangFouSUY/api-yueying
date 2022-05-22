@@ -55,4 +55,4 @@ class ListMovieSerializer(serializers.ModelSerializer):
     dislikes = serializers.IntegerField()
     class Meta:
         model = Movie
-        fields = ['id', 'title', 'description', 'thumbnail', 'director', 'actor', 'category', 'rating', 'likes', 'dislikes']
+        fields = ['id', 'title', 'description', 'thumbnail', 'director','actor', 'category', 'rating', 'likes', 'dislikes','year']

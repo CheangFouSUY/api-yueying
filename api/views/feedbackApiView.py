@@ -78,6 +78,5 @@ class FeedbackListView(generics.ListAPIView):
         if category is not None:
             filter &= Q(category=category)
 
-        data = Feedback.objects.filter(filter)
-        data['message'] = "Get List Feedbacks Successfully"
-        return Response(data, status=status.HTTP_200_OK)
+        return Feedback.objects.filter(filter)
+
