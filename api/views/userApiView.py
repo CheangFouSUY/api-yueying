@@ -194,11 +194,19 @@ class LoginView(generics.GenericAPIView):
     @swagger_auto_schema(operation_summary="User Login")
     def post(self, request):
 
-        if CustomUser.objects.get(email=serializer.data['username']).exists():
-            user = CustomUser.objects.get(email=serializer.data['username'])
-        else:
-            user = CustomUser.objects.get(username=serializer.data['username'])
-        serializer = self.serializer_class(data=request.data)
+        username = request.data['username']
+        data = {}
+        data['password'] = request.data['password']
+
+        filter = Q(email=username) | Q(username=username)
+        user = CustomUser.objects.filter(filter)
+        if not user.exists():
+            return Response({"message": "Invalid credentials, try again"},  status= status.HTTP_400_BAD_REQUEST)
+        
+        user = user[0]
+        data['username'] = user.username
+
+        serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
 
 
