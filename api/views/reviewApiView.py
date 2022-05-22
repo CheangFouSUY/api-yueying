@@ -113,14 +113,22 @@ class ReviewListView(generics.ListAPIView):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
         feed = self.request.GET.get('feed')
+        book = self.request.GET.get('book')
+        movie = self.request.GET.get('movie')
 
         filter = Q()
         if search is not None:
             searchTerms = search.split(' ')
             for term in searchTerms:
                 filter &= Q(title__icontains=term) | Q(description__icontains=term) | Q(createdBy__username__icontains=term) | Q(feed__title__icontains=term) 
+
         if feed is not None:
             filter &= Q(feed=feed)
+        if book is not None:
+            filter &= Q(book=book)
+        if movie is not None:
+            filter &= Q(movie=movie)
+
             
         allReviews = Review.objects.filter(filter)
         for review in allReviews:
