@@ -118,7 +118,7 @@ class BookListView(generics.ListAPIView):
         if category is not None:
             filter &= Q(category=category)
 
-        allBooks = Book.objects.filter(filter)
+        allBooks = Book.objects.filter(filter).order_by('-createdAt')
         for book in allBooks:
             allUserBooks = UserBook.objects.filter(book=book)
             rating = allUserBooks.filter(isRated=True).aggregate(Avg('rateScore'))
@@ -132,8 +132,11 @@ class BookListView(generics.ListAPIView):
             orderBy = 'likes'
         elif orderBy == 'd':
             orderBy = 'dislikes'
-        else:
+        elif orderBy == 'r':
             orderBy = 'rating'
+        else:
+            return allBooks
+
         ordered = sorted(allBooks, key=operator.attrgetter(orderBy), reverse=True)
         return ordered
 

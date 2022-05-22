@@ -193,10 +193,15 @@ class LoginView(generics.GenericAPIView):
 
     @swagger_auto_schema(operation_summary="User Login")
     def post(self, request):
+
+        if CustomUser.objects.get(email=serializer.data['username']).exists():
+            user = CustomUser.objects.get(email=serializer.data['username'])
+        else:
+            user = CustomUser.objects.get(username=serializer.data['username'])
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user = CustomUser.objects.get(username=serializer.data['username'])
+
         data = serializer.data
         data['id'] = user.id
         data['firstName'] = user.firstName or None

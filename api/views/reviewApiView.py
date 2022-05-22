@@ -130,7 +130,7 @@ class ReviewListView(generics.ListAPIView):
             filter &= Q(movie=movie)
 
             
-        allReviews = Review.objects.filter(filter)
+        allReviews = Review.objects.filter(filter).order_by('-createdAt')
         for review in allReviews:
             allUserReviews = UserReview.objects.filter(review=review)
             likes = allUserReviews.filter(response='L').count()
@@ -140,8 +140,10 @@ class ReviewListView(generics.ListAPIView):
 
         if orderBy == 'd':
             orderBy = 'dislikes'
-        else:
+        elif orderBy == 'l':
             orderBy = 'likes'
+        else:
+            return allReviews
 
         ordered = sorted(allReviews, key=operator.attrgetter(orderBy), reverse=True)
 

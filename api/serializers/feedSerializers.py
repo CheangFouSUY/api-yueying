@@ -63,13 +63,14 @@ class ListFeedSerializer(serializers.ModelSerializer):
     reviewers = serializers.IntegerField()
     class Meta:
         model = Feed
-        fields = ['id', 'title', 'createdBy', 'likes', 'dislikes', 'reviewers']
+        fields = ['id', 'title', 'createdBy', 'likes', 'dislikes', 'reviewers','createdAt']
 
 class ListGroupFeedSerializer(serializers.ModelSerializer):
     likes = serializers.IntegerField()
     dislikes = serializers.IntegerField()
     reviewers = serializers.IntegerField()
     isPin = serializers.IntegerField()
+    isFeatured = serializers.IntegerField()
     class Meta:
         model = Feed
-        fields = ['id', 'title', 'createdBy', 'likes', 'dislikes', 'reviewers','isPin']
+        fields = ['id', 'title', 'createdBy', 'likes', 'dislikes', 'reviewers','isPin','createdAt']

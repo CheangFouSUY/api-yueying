@@ -10,7 +10,7 @@ class BookDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
         # need modification later on when implement with multiple models
-        fields = ['id', 'isbn', 'title', 'description', 'img', 'thumbnail', 'author', 'publisher', 'year', 'category']
+        fields = ['id', 'isbn', 'title', 'description', 'img', 'thumbnail', 'author', 'publisher', 'year', 'category','createdAt']
         extra_kwargs = {
             'id': {'read_only': True},
             'thumbnail': {'read_only': True},
@@ -25,7 +25,7 @@ class BookProfileSerializer(serializers.ModelSerializer):
     dislikes = serializers.IntegerField()
     class Meta:
         model = Book
-        fields = ['id', 'isbn', 'title', 'description', 'img', 'thumbnail', 'author', 'publisher', 'year', 'category', 'rating', 'likes', 'dislikes']
+        fields = ['id', 'isbn', 'title', 'description', 'img', 'thumbnail', 'author', 'publisher', 'year', 'category', 'rating', 'likes', 'dislikes','createdAt']
         extra_kwargs = {
             'id': {'read_only': True},
             'thumbnail': {'read_only': True},
@@ -52,4 +52,4 @@ class ListBookSerializer(serializers.ModelSerializer):
     dislikes = serializers.IntegerField()
     class Meta:
         model = Book
-        fields = ['id', 'isbn', 'title', 'description', 'thumbnail', 'author', 'publisher', 'category', 'rating', 'likes', 'dislikes','year']
+        fields = ['id', 'isbn', 'title', 'description', 'thumbnail', 'author', 'publisher', 'category', 'rating', 'likes', 'dislikes','year','createdAt']

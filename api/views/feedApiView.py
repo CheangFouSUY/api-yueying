@@ -127,7 +127,7 @@ class FeedListView(generics.ListAPIView):
 
         filter &= Q(isPublic=isPublic)
 
-        allFeeds = Feed.objects.filter(filter)
+        allFeeds = Feed.objects.filter(filter).order_by('-createdAt')
         for feed in allFeeds:
             allUserFeeds = UserFeed.objects.filter(feed=feed)
             reviewers = Review.objects.filter(feed=feed).count()
@@ -141,8 +141,10 @@ class FeedListView(generics.ListAPIView):
             orderBy = 'likes'
         elif orderBy == 'd':
             orderBy = 'dislikes'
-        else:
+        elif orderBy == 'r':
             orderBy = 'reviewers'
+        else:
+            return allFeeds
 
         ordered = sorted(allFeeds, key=operator.attrgetter(orderBy), reverse=True)
 

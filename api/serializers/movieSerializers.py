@@ -11,7 +11,7 @@ class MovieDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movie
         # need modification later on when implement with multiple models
-        fields = ['id', 'title', 'description', 'img', 'thumbnail', 'director', 'actor', 'year', 'category']
+        fields = ['id', 'title', 'description', 'img', 'thumbnail', 'director', 'actor', 'year', 'category','createdAt']
         extra_kwargs = {
             'id': {'read_only': True},
             'thumbnail': {'read_only': True},
@@ -27,7 +27,7 @@ class MovieProfileSerializer(serializers.ModelSerializer):
     dislikes = serializers.IntegerField()
     class Meta:
         model = Movie
-        fields = ['id', 'title', 'description', 'img', 'thumbnail', 'director', 'actor', 'year', 'category', 'rating', 'likes', 'dislikes']
+        fields = ['id', 'title', 'description', 'img', 'thumbnail', 'director', 'actor', 'year', 'category', 'rating', 'likes', 'dislikes','createdAt']
         extra_kwargs = {
             'id': {'read_only': True},
             'thumbnail': {'read_only': True},
@@ -55,4 +55,4 @@ class ListMovieSerializer(serializers.ModelSerializer):
     dislikes = serializers.IntegerField()
     class Meta:
         model = Movie
-        fields = ['id', 'title', 'description', 'thumbnail', 'director','actor', 'category', 'rating', 'likes', 'dislikes','year']
+        fields = ['id', 'title', 'description', 'thumbnail', 'director','actor', 'category', 'rating', 'likes', 'dislikes','year','createdAt']

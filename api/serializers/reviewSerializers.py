@@ -61,5 +61,5 @@ class ListReviewSerializer(serializers.ModelSerializer):
     dislikes = serializers.IntegerField()
     class Meta:
         model = Review
-        fields = ['id', 'title', 'description', 'createdBy', 'feed', 'book', 'movie', 'updatedAt', 'likes', 'dislikes']
+        fields = ['id', 'title', 'description', 'createdBy', 'feed', 'book', 'movie', 'updatedAt', 'likes', 'dislikes','createdAt']
 

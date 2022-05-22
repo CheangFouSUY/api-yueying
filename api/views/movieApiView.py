@@ -121,7 +121,7 @@ class MovieListView(generics.ListAPIView):
         if category is not None:
             filter &= Q(category=category)
 
-        allMovies = Movie.objects.filter(filter)
+        allMovies = Movie.objects.filter(filter).order_by('-createdAt')
         for movie in allMovies:
             allUserMovies = UserMovie.objects.filter(movie=movie)
             rating = allUserMovies.filter(isRated=True).aggregate(Avg('rateScore'))
@@ -135,8 +135,11 @@ class MovieListView(generics.ListAPIView):
             orderBy = 'likes'
         elif orderBy == 'd':
             orderBy = 'dislikes'
-        else:
+        elif orderBy == 'r':
             orderBy = 'rating'
+        else:
+            return allMovies
+
         ordered = sorted(allMovies, key=operator.attrgetter(orderBy), reverse=True)
 
         return ordered
