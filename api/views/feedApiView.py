@@ -32,13 +32,11 @@ class FeedDetailView(generics.GenericAPIView):
     def get(self, request, feedId):
         try:
             feed = get_object_or_404(Feed, pk=feedId)
-            allReviews = Review.objects.filter(feed=feed)
             allUserFeeds = UserFeed.objects.filter(feed=feed)
             likes = allUserFeeds.filter(response='L').count()
             dislikes = allUserFeeds.filter(response='D').count()
             feed.likes = likes
             feed.dislikes = dislikes
-            feed.allReviews = allReviews
             serializer = self.get_serializer(instance=feed)
             data = serializer.data
             data['message'] = "Get Feed Detail Successfully"
@@ -112,7 +110,10 @@ class FeedListView(generics.ListAPIView):
         search = self.request.GET.get('search')
         group = self.request.GET.get('belongTo')
         isPublic = self.request.GET.get('isPublic')
+        followedBy = self.request.GET.get('followedBy')  # followedBy = userId
+        createdBy = self.request.GET.get('createdBy')
         # by default, get feed return isPublic = True feed
+
         if isPublic is None:
             isPublic = True
 
@@ -121,11 +122,20 @@ class FeedListView(generics.ListAPIView):
             searchTerms = search.split(' ')
             for term in searchTerms:
                 filter &= Q(title__icontains=term) | Q(description__icontains=term) | Q(createdBy__username__icontains=term)
+
         if group is not None:
             filter &= Q(belongTo=group)
             isPublic = False    # by Default if it has belongTo field, then it's not public anymore
 
-        filter &= Q(isPublic=isPublic)
+        if followedBy is not None:
+            filter &= Q(userfeed__user = followedBy, userfeed__isFollowed = True)
+
+        if createdBy is not None:
+            filter &= Q(createdBy = createdBy)
+
+        if followedBy is None and createdBy is None:
+            filter &= Q(isPublic=isPublic)
+
 
         allFeeds = Feed.objects.filter(filter).order_by('-createdAt')
         for feed in allFeeds:

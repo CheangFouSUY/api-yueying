@@ -109,6 +109,7 @@ class BookListView(generics.ListAPIView):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
         category = self.request.GET.get('category')
+        savedBy = self.request.GET.get('savedBy')  #savedBy = userId
 
         filter = Q()
         if search is not None:
@@ -117,6 +118,9 @@ class BookListView(generics.ListAPIView):
                 filter &= Q(isbn__icontains=term) | Q(title__icontains=term) | Q(author__icontains=term) | Q(publisher__icontains=term)
         if category is not None:
             filter &= Q(category=category)
+
+        if savedBy is not None:
+            filter &= Q(userbook__user=savedBy, userbook__isSaved = True)
 
         allBooks = Book.objects.filter(filter).order_by('-createdAt')
         for book in allBooks:

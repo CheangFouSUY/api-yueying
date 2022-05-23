@@ -16,5 +16,6 @@ class Group(models.Model):
     category = models.CharField(max_length=150, choices=CATEGORIES, default=CATEGORIES[0][0])
     createdBy = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
     isDeleted = models.BooleanField(default=False)
+    img = models.ImageField(upload_to="uploads/groups", blank=True)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)

@@ -25,12 +25,11 @@ class FeedDetailSerializer(serializers.ModelSerializer):
 Serializer class for Feed Profile (include rating, likes, dislikes)
 """
 class FeedProfileSerializer(serializers.ModelSerializer):
-    allReviews = ReviewDetailSerializer(many=True)
     likes = serializers.IntegerField()
     dislikes = serializers.IntegerField()
     class Meta:
         model = Feed
-        fields = ['id', 'title', 'description', 'img', 'isPublic', 'isDeleted', 'createdBy', 'belongTo', 'createdAt', 'updatedAt', 'likes', 'dislikes', 'allReviews']
+        fields = ['id', 'title', 'description', 'img', 'isPublic', 'isDeleted', 'createdBy', 'belongTo', 'createdAt', 'updatedAt', 'likes', 'dislikes']
         extra_kwargs = {
             'id': {'read_only': True},
             'isPublic': {'read_only': True},
@@ -38,7 +37,6 @@ class FeedProfileSerializer(serializers.ModelSerializer):
             'belongTo': {'read_only': True},
             'createdAt': {'read_only': True},
             'updatedAt': {'read_only': True},
-            'allReviews': {'read_only': True},
         }
 
 

@@ -258,12 +258,6 @@ class UserDetailView(generics.GenericAPIView):
     def get(self, request, userId):
         try:
             user = CustomUser.objects.get(pk=userId)
-            books = UserBook.objects.filter(user=user, isSaved=True)
-            movies = UserMovie.objects.filter(user=user, isSaved=True)
-            feeds = UserFeed.objects.filter(user=user, isFollowed=True)
-            user.books = books;
-            user.movies = movies;
-            user.feeds = feeds;
             serializer=self.get_serializer(instance=user)
             data = serializer.data
             data['message'] = "Get User Detail Successfully"

@@ -233,13 +233,10 @@ class UserDetailSerializer(serializers.ModelSerializer):
 Serializer for User Profile, Use for Get Detail of User
 """
 class UserProfileSerializer(serializers.ModelSerializer):
-    books = UserBookDetailSerializer(many=True)
-    movies = UserMovieDetailSerializer(many=True)
-    feeds = UserFeedDetailSerializer(many=True)
     class Meta:
         model = CustomUser
         # might need to have multiple models later on
-        fields = ['id', 'email', 'username', 'firstName', 'lastName', 'about', 'gender', 'profile', 'dob', 'books', 'movies', 'feeds','securityQuestion']
+        fields = ['id', 'email', 'username', 'firstName', 'lastName', 'about', 'gender', 'profile', 'dob','securityQuestion']
 
 
 

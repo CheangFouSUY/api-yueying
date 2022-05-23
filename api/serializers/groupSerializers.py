@@ -36,7 +36,7 @@ Serializer class for Creating Group
 class GroupCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
-        fields = ['id','groupName', 'description', 'category']
+        fields = ['id','groupName', 'description', 'category','img']
         
     def validate(self, attrs):
         return super().validate(attrs)
