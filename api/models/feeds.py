@@ -17,5 +17,6 @@ class Feed(models.Model):
 
     def save(self, *args, **kwargs):
         if self.img:
-            self.img = get_thumbnail(self.img, 100, False)     # quality = 100, isThumbnail False = maxWidthHeight = 1024px
+            # auto ratio
+            self.img = get_thumbnail(self.img, 100, False, 0)     # quality = 100, isThumbnail False = maxWidthHeight = 1024px
         super(Feed, self).save(*args, **kwargs)

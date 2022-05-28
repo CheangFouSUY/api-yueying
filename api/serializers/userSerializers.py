@@ -164,7 +164,16 @@ class ResetPasswordByPasswordSerializer(serializers.Serializer):
         user.updatedAt = timezone.now()
         user.save()
 
+class ResetQuestionSerializer(serializers.Serializer):
+    password = serializers.CharField(style={'input_type': 'password'}, write_only=True)
 
+    class Meta:
+        model = CustomUser
+        fields = ['securityQuestion','securityAnswer']
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
+        super().__init__(*args, **kwargs)
 
 """
 Serializer class for login
@@ -233,13 +242,10 @@ class UserDetailSerializer(serializers.ModelSerializer):
 Serializer for User Profile, Use for Get Detail of User
 """
 class UserProfileSerializer(serializers.ModelSerializer):
-    books = UserBookDetailSerializer(many=True)
-    movies = UserMovieDetailSerializer(many=True)
-    feeds = UserFeedDetailSerializer(many=True)
     class Meta:
         model = CustomUser
         # might need to have multiple models later on
-        fields = ['id', 'email', 'username', 'firstName', 'lastName', 'about', 'gender', 'profile', 'dob', 'books', 'movies', 'feeds','securityQuestion']
+        fields = ['id', 'email', 'username', 'firstName', 'lastName', 'about', 'gender', 'profile', 'dob','securityQuestion']
 
 
 

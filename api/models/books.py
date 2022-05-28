@@ -35,6 +35,7 @@ class Book(models.Model):
 
     def save(self, *args, **kwargs):
         if self.img:
-            self.img = get_thumbnail(self.img, 100, False)     # quality = 100, isThumbnail False = maxWidthHeight = 1024px
-            self.thumbnail = get_thumbnail(self.img, 100, True)    # quality = 100, isThumbnail False = maxWidthHeight = 256px
+            # ratio 3:4 0.75
+            self.img = get_thumbnail(self.img, 100, False, 0.75)     # quality = 100, isThumbnail False = maxWidthHeight = 1024px
+            self.thumbnail = get_thumbnail(self.img, 100, True, 0.75)    # quality = 100, isThumbnail False = maxWidthHeight = 256px
         super(Book, self).save(*args, **kwargs)

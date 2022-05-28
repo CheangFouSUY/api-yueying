@@ -1,7 +1,9 @@
 import operator
+from urllib import response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Avg, Q
+from requests import request
 from rest_framework.response import Response
 from rest_framework import generics, status, permissions
 from drf_yasg.utils import swagger_auto_schema
@@ -39,6 +41,24 @@ class BookDetailView(generics.GenericAPIView):
             book.rating = rating['rateScore__avg'] if rating['rateScore__avg'] else 0
             book.likes = likes
             book.dislikes = dislikes
+            book.response = 'O'
+            book.isRate = False
+            book.isSave = False
+            book.score = 0
+            if not request.user.is_anonymous:
+                userLike = UserBook.objects.filter(user=self.request.user,book=book,response='L').first()
+                if userLike:
+                    book.response = 'L'
+                userDislike = UserBook.objects.filter(user=self.request.user,book=book,response='D').first()
+                if userDislike:
+                    book.response = 'D'
+                userRate = UserBook.objects.filter(user=self.request.user,book=book,isRated=True).first()
+                if userRate:
+                    book.isRate = True
+                    book.score = userRate.rateScore
+                userSave = UserBook.objects.filter(user=self.request.user,book=book,isSaved=True).first()
+                if userSave:
+                    book.isSave = True
             serializer = self.get_serializer(instance=book)
             data = serializer.data
             data['message'] = "Get Book Detail Successfully"
@@ -109,6 +129,7 @@ class BookListView(generics.ListAPIView):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
         category = self.request.GET.get('category')
+        savedBy = self.request.GET.get('savedBy')  #savedBy = userId
 
         filter = Q()
         if search is not None:
@@ -118,7 +139,10 @@ class BookListView(generics.ListAPIView):
         if category is not None:
             filter &= Q(category=category)
 
-        allBooks = Book.objects.filter(filter)
+        if savedBy is not None:
+            filter &= Q(userbook__user=savedBy, userbook__isSaved = True)
+
+        allBooks = Book.objects.filter(filter).order_by('-createdAt')
         for book in allBooks:
             allUserBooks = UserBook.objects.filter(book=book)
             rating = allUserBooks.filter(isRated=True).aggregate(Avg('rateScore'))
@@ -127,13 +151,34 @@ class BookListView(generics.ListAPIView):
             book.rating = rating['rateScore__avg'] if rating['rateScore__avg'] else 0
             book.likes = likes
             book.dislikes = dislikes
+            book.response = 'O'
+            book.isRate = False
+            book.isSave = False
+            book.score = 0
+            if not self.request.user.is_anonymous:
+                userLike = UserBook.objects.filter(user=self.request.user,book=book,response='L').first()
+                if userLike:
+                    book.response = 'L'
+                userDislike = UserBook.objects.filter(user=self.request.user,book=book,response='D').first()
+                if userDislike:
+                    book.response = 'D'
+                userRate = UserBook.objects.filter(user=self.request.user,book=book,isRated=True).first()
+                if userRate:
+                    book.isRate = True
+                    book.score = userRate.rateScore
+                userSave = UserBook.objects.filter(user=self.request.user,book=book,isSaved=True).first()
+                if userSave:
+                    book.isSave = True
 
         if orderBy == 'l':
             orderBy = 'likes'
         elif orderBy == 'd':
             orderBy = 'dislikes'
-        else:
+        elif orderBy == 'r':
             orderBy = 'rating'
+        else:
+            return allBooks
+
         ordered = sorted(allBooks, key=operator.attrgetter(orderBy), reverse=True)
         return ordered
 
@@ -147,13 +192,23 @@ class BookReactionView(generics.GenericAPIView):
 
     @swagger_auto_schema(operation_summary="React On Book, ie. Likes, Dislikes, Rating")
     def put(self, request, bookId):
+        request.data._mutable = True
         book = get_object_or_404(Book, pk=bookId)
         try:
             tmpUserBook = UserBook.objects.get(book=bookId, user=request.user)  # get one
         except UserBook.DoesNotExist:
             tmpUserBook = None
         rateScore = int(request.data['rateScore'])  # by default, it's a str
-        isRated = True if rateScore > 0 else False
+        if rateScore > 0:
+            isRated = True
+        else:
+            if tmpUserBook:
+                if tmpUserBook.rateScore > 0:
+                    request.data['rateScore'] = tmpUserBook.rateScore
+                    isRated = True
+                else:
+                    isRated = False
+                
         if tmpUserBook:
             """
                 instance take one, but filter return list, so need to specify index.

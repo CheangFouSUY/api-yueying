@@ -30,6 +30,7 @@ class UserMovieDetailSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'movie': {'read_only': True},
             'user': {'read_only': True},
+            'isRated': {'read_only': True},
             'createdAt': {'read_only': True},
             'updatedAt': {'read_only': True},
         }

@@ -37,6 +37,14 @@ class ReviewDetailView(generics.GenericAPIView):
             dislikes = allUserReviews.filter(response='D').count()
             review.likes = likes
             review.dislikes = dislikes
+            review.response = 'O'
+            if not request.user.is_anonymous:
+                userLike = UserReview.objects.filter(user=self.request.user,review=review,response='L').first()
+                if userLike:
+                    review.response = 'L'
+                userDislike = UserReview.objects.filter(user=self.request.user,review=review,response='D').first()
+                if userDislike:
+                    review.response = 'D'
             serializer = self.get_serializer(instance=review)
             data = serializer.data
             data['message'] = "Get Review Detail Successfully"
@@ -113,27 +121,46 @@ class ReviewListView(generics.ListAPIView):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
         feed = self.request.GET.get('feed')
+        book = self.request.GET.get('book')
+        movie = self.request.GET.get('movie')
 
         filter = Q()
         if search is not None:
             searchTerms = search.split(' ')
             for term in searchTerms:
                 filter &= Q(title__icontains=term) | Q(description__icontains=term) | Q(createdBy__username__icontains=term) | Q(feed__title__icontains=term) 
+
         if feed is not None:
             filter &= Q(feed=feed)
+        if book is not None:
+            filter &= Q(book=book)
+        if movie is not None:
+            filter &= Q(movie=movie)
+
             
-        allReviews = Review.objects.filter(filter)
+        allReviews = Review.objects.filter(filter).order_by('-createdAt')
         for review in allReviews:
             allUserReviews = UserReview.objects.filter(review=review)
             likes = allUserReviews.filter(response='L').count()
             dislikes = allUserReviews.filter(response='D').count()
             review.likes = likes
             review.dislikes = dislikes
+            review.response = 'O'
+
+            if not self.request.user.is_anonymous:
+                userLike = UserReview.objects.filter(user=self.request.user,review=review,response='L').first()
+                if userLike:
+                    review.response = 'L'
+                userDislike = UserReview.objects.filter(user=self.request.user,review=review,response='D').first()
+                if userDislike:
+                    review.response = 'D'
 
         if orderBy == 'd':
             orderBy = 'dislikes'
-        else:
+        elif orderBy == 'l':
             orderBy = 'likes'
+        else:
+            return allReviews
 
         ordered = sorted(allReviews, key=operator.attrgetter(orderBy), reverse=True)
 

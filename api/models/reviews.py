@@ -10,14 +10,15 @@ class Review(models.Model):
     img = models.ImageField(upload_to="uploads/reviews", blank=True)
     isDeleted = models.BooleanField(default=False)
     createdBy = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
-    feed = models.ForeignKey("Feed", on_delete=models.CASCADE, null=True, blank=False, default=None)
-    book = models.ForeignKey("Book", on_delete=models.CASCADE, null=True, blank=False, default=None)
-    movie = models.ForeignKey("Movie", on_delete=models.CASCADE, null=True, blank=False, default=None)
+    feed = models.ForeignKey("Feed", on_delete=models.CASCADE, null=True, blank=True, default=None)
+    book = models.ForeignKey("Book", on_delete=models.CASCADE, null=True, blank=True, default=None)
+    movie = models.ForeignKey("Movie", on_delete=models.CASCADE, null=True, blank=True, default=None)
 
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
 
     def save(self, *args, **kwargs):
         if self.img:
-            self.img = get_thumbnail(self.img, 100, False)     # quality = 100, isThumbnail False = maxWidthHeight = 1024px
+            # auto ratio
+            self.img = get_thumbnail(self.img, 100, False, 0)     # quality = 100, isThumbnail False = maxWidthHeight = 1024px
         super(Review, self).save(*args, **kwargs)

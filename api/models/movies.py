@@ -17,6 +17,16 @@ class Movie(models.Model):
         (8, '综艺'),
         (9, '动漫'),
         (10, '卡通'),
+        (11, 'LGBT')
+    )
+    AREA = (
+        (0, '中国'),
+        (1, '美国'),
+        (2, '英国'),
+        (3, '韩国'),
+        (4, '日本'),
+        (5, '泰国'),
+        (6, '马来西亚'),
     )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=150)
@@ -27,11 +37,13 @@ class Movie(models.Model):
     actor = models.CharField(max_length=150)
     year = models.DateField(default=date(2000, 1, 1))
     category = models.IntegerField(choices=CATEGORY,null=False, blank=False,default=0)
+    area = models.IntegerField(choices=AREA,null=False, blank=False,default=0)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
     
     def save(self, *args, **kwargs):
         if self.img:
-            self.img = get_thumbnail(self.img, 100, False)     # quality = 100, isThumbnail False = maxWidthHeight = 1024px
-            self.thumbnail = get_thumbnail(self.img, 100, True)    # quality = 100, isThumbnail False = maxWidthHeight = 256px
+            # ratio 3:4 0.75
+            self.img = get_thumbnail(self.img, 100, False, 0.75)     # quality = 100, isThumbnail False = maxWidthHeight = 1024px
+            self.thumbnail = get_thumbnail(self.img, 100, True, 0.75)    # quality = 100, isThumbnail False = maxWidthHeight = 256px
         super(Movie, self).save(*args, **kwargs)

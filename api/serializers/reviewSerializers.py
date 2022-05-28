@@ -27,9 +27,10 @@ Serializer class for Review Profile (include rating, likes, dislikes)
 class ReviewProfileSerializer(serializers.ModelSerializer):
     likes = serializers.IntegerField()
     dislikes = serializers.IntegerField()
+    response = serializers.CharField()
     class Meta:
         model = Review
-        fields = ['id', 'title', 'description', 'img', 'isDeleted', 'createdBy', 'feed', 'book', 'movie', 'createdAt', 'updatedAt', 'likes', 'dislikes']
+        fields = ['id', 'title', 'description', 'img', 'isDeleted', 'createdBy', 'feed', 'book', 'movie', 'createdAt', 'updatedAt', 'likes', 'dislikes','response']
         extra_kwargs = {
             'id': {'read_only': True},
             'createdBy': {'read_only': True},
@@ -59,7 +60,9 @@ Serializer class for Listing Reviews
 class ListReviewSerializer(serializers.ModelSerializer):
     likes = serializers.IntegerField()
     dislikes = serializers.IntegerField()
+    response = serializers.CharField()
+
     class Meta:
         model = Review
-        fields = ['id', 'title', 'description', 'createdBy', 'feed', 'book', 'movie', 'updatedAt', 'likes', 'dislikes']
+        fields = ['id', 'title', 'description', 'createdBy', 'feed', 'book', 'movie', 'updatedAt', 'likes', 'dislikes','createdAt','response']
 

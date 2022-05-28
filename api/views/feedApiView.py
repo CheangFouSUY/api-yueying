@@ -32,13 +32,23 @@ class FeedDetailView(generics.GenericAPIView):
     def get(self, request, feedId):
         try:
             feed = get_object_or_404(Feed, pk=feedId)
-            allReviews = Review.objects.filter(feed=feed)
             allUserFeeds = UserFeed.objects.filter(feed=feed)
             likes = allUserFeeds.filter(response='L').count()
             dislikes = allUserFeeds.filter(response='D').count()
             feed.likes = likes
             feed.dislikes = dislikes
-            feed.allReviews = allReviews
+            feed.response = 'O'
+            feed.isFollow = False
+            if not request.user.is_anonymous:
+                userLike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='L').first()
+                if userLike:
+                    feed.response = 'L'
+                userDislike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='D').first()
+                if userDislike:
+                    feed.response = 'D'
+                userFollow = UserFeed.objects.filter(user=self.request.user,feed=feed,isFollowed=True).first()
+                if userFollow:
+                    feed.isFollow = True
             serializer = self.get_serializer(instance=feed)
             data = serializer.data
             data['message'] = "Get Feed Detail Successfully"
@@ -112,22 +122,34 @@ class FeedListView(generics.ListAPIView):
         search = self.request.GET.get('search')
         group = self.request.GET.get('belongTo')
         isPublic = self.request.GET.get('isPublic')
+        followedBy = self.request.GET.get('followedBy')  # followedBy = userId
+        createdBy = self.request.GET.get('createdBy')
         # by default, get feed return isPublic = True feed
-        if isPublic is None:
-            isPublic = True
+
+    
+        if isPublic is not None:
+            isPublic = isPublic
 
         filter = Q()
         if search is not None:
             searchTerms = search.split(' ')
             for term in searchTerms:
                 filter &= Q(title__icontains=term) | Q(description__icontains=term) | Q(createdBy__username__icontains=term)
+
         if group is not None:
             filter &= Q(belongTo=group)
             isPublic = False    # by Default if it has belongTo field, then it's not public anymore
 
-        filter &= Q(isPublic=isPublic)
+        if followedBy is not None:
+            filter &= Q(userfeed__user = followedBy, userfeed__isFollowed = True)
 
-        allFeeds = Feed.objects.filter(filter)
+        if createdBy is not None:
+            filter &= Q(createdBy = createdBy)
+            
+        if followedBy is None and createdBy is None and isPublic is not None:
+            filter &= Q(isPublic=isPublic)
+
+        allFeeds = Feed.objects.filter(filter).order_by('-createdAt')
         for feed in allFeeds:
             allUserFeeds = UserFeed.objects.filter(feed=feed)
             reviewers = Review.objects.filter(feed=feed).count()
@@ -136,13 +158,28 @@ class FeedListView(generics.ListAPIView):
             feed.likes = likes
             feed.dislikes = dislikes
             feed.reviewers = reviewers
+            feed.response = 'O'
+            feed.isFollow = False
+
+            if not self.request.user.is_anonymous:
+                userLike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='L').first()
+                if userLike:
+                    feed.response = 'L'
+                userDislike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='D').first()
+                if userDislike:
+                    feed.response = 'D'
+                userFollow = UserFeed.objects.filter(user=self.request.user,feed=feed,isFollowed=True).first()
+                if userFollow:
+                    feed.isFollow = True
 
         if orderBy == 'l':
             orderBy = 'likes'
         elif orderBy == 'd':
             orderBy = 'dislikes'
-        else:
+        elif orderBy == 'r':
             orderBy = 'reviewers'
+        else:
+            return allFeeds
 
         ordered = sorted(allFeeds, key=operator.attrgetter(orderBy), reverse=True)
 

@@ -97,6 +97,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     
     def save(self, *args, **kwargs):
         if self.profile:
-            self.profile = get_thumbnail(self.profile, 100, False)     # quality = 100, isThumbnail False = maxWidthHeight = 1024px
-            self.thumbnail = get_thumbnail(self.profile, 100, True)    # quality = 100, isThumbnail False = maxWidthHeight = 256px
+            # ratio 1:1
+            self.profile = get_thumbnail(self.profile, 100, False, 1)     # quality = 100, isThumbnail False = maxWidthHeight = 1024px
+            self.thumbnail = get_thumbnail(self.profile, 100, True, 1)    # quality = 100, isThumbnail False = maxWidthHeight = 256px
         super(CustomUser, self).save(*args, **kwargs)

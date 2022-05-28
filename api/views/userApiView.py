@@ -162,6 +162,7 @@ class ResetPasswordbyQuestionView(generics.GenericAPIView):
 
 class ResetSecurityQuestionView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ResetQuestionSerializer
 
     @swagger_auto_schema(operation_summary="Reset Security Question And Answer")
     def put(self, request):
@@ -193,10 +194,23 @@ class LoginView(generics.GenericAPIView):
 
     @swagger_auto_schema(operation_summary="User Login")
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
+
+        username = request.data['username']
+        data = {}
+        data['password'] = request.data['password']
+
+        filter = Q(email=username) | Q(username=username)
+        user = CustomUser.objects.filter(filter)
+        if not user.exists():
+            return Response({"message": "Invalid credentials, try again"},  status= status.HTTP_400_BAD_REQUEST)
+        
+        user = user[0]
+        data['username'] = user.username
+
+        serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
 
-        user = CustomUser.objects.get(username=serializer.data['username'])
+
         data = serializer.data
         data['id'] = user.id
         data['firstName'] = user.firstName or None
@@ -245,12 +259,6 @@ class UserDetailView(generics.GenericAPIView):
     def get(self, request, userId):
         try:
             user = CustomUser.objects.get(pk=userId)
-            books = UserBook.objects.filter(user=user, isSaved=True)
-            movies = UserMovie.objects.filter(user=user, isSaved=True)
-            feeds = UserFeed.objects.filter(user=user, isFollowed=True)
-            user.books = books;
-            user.movies = movies;
-            user.feeds = feeds;
             serializer=self.get_serializer(instance=user)
             data = serializer.data
             data['message'] = "Get User Detail Successfully"
