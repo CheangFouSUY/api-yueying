@@ -198,6 +198,7 @@ class BookReactionView(generics.GenericAPIView):
             tmpUserBook = UserBook.objects.get(book=bookId, user=request.user)  # get one
         except UserBook.DoesNotExist:
             tmpUserBook = None
+        isRated = False
         rateScore = int(request.data['rateScore'])  # by default, it's a str
         if rateScore > 0:
             isRated = True

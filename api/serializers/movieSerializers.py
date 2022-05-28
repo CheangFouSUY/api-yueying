@@ -11,7 +11,7 @@ class MovieDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movie
         # need modification later on when implement with multiple models
-        fields = ['id', 'title', 'description', 'img', 'thumbnail', 'director', 'actor', 'year', 'category','createdAt']
+        fields = ['id', 'title', 'description', 'img', 'thumbnail', 'director', 'actor', 'year', 'area','category','createdAt']
         extra_kwargs = {
             'id': {'read_only': True},
             'thumbnail': {'read_only': True},
@@ -31,7 +31,7 @@ class MovieProfileSerializer(serializers.ModelSerializer):
     score = serializers.FloatField()
     class Meta:
         model = Movie
-        fields = ['id', 'title', 'description', 'img', 'thumbnail', 'director', 'actor', 'year', 'category', 'rating', 'likes', 'dislikes','createdAt','isSave','response','isRate','score']
+        fields = ['id', 'title', 'description', 'img', 'thumbnail', 'director', 'actor', 'year', 'category','area', 'rating', 'likes', 'dislikes','createdAt','isSave','response','isRate','score']
         extra_kwargs = {
             'id': {'read_only': True},
             'thumbnail': {'read_only': True},
@@ -44,7 +44,7 @@ Serializer class for Creating Movie
 class MovieCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movie
-        fields = ['title', 'description', 'img', 'director', 'actor', 'year', 'category']
+        fields = ['title', 'description', 'img', 'director', 'actor', 'year','area', 'category']
         
     def validate(self, attrs):
         return super().validate(attrs)
@@ -64,4 +64,4 @@ class ListMovieSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Movie
-        fields = ['id', 'title', 'description', 'thumbnail', 'director','actor', 'category', 'rating', 'likes', 'dislikes','year','createdAt','isSave','response','isRate','score']
+        fields = ['id', 'title', 'description', 'thumbnail', 'director','actor', 'area','category', 'rating', 'likes', 'dislikes','year','createdAt','isSave','response','isRate','score']

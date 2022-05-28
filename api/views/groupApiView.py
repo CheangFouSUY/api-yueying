@@ -39,7 +39,7 @@ class GroupDetailView(generics.GenericAPIView):
             group = get_object_or_404(Group, pk=groupId)
             members = UserGroup.objects.filter(group=groupId).count()
             group.members = members
-            serializer = self.ger_serializer(instance=group)
+            serializer = self.get_serializer(instance=group)
             data = serializer.data
             data['message'] = "Get Group Detail Successfully"
             return Response(data, status=status.HTTP_200_OK)
@@ -54,7 +54,7 @@ class GroupDetailView(generics.GenericAPIView):
 
         if admin:
             group = get_object_or_404(Group, pk=groupId)
-            serializer = self.ger_serializer(instance=group, data=request.data)
+            serializer = self.get_serializer(instance=group, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(updatedAt=timezone.now())
             data = serializer.data
@@ -314,25 +314,26 @@ class GroupListView(generics.ListAPIView):
 
         allGroups = Group.objects.filter(filter)
         for group in allGroups:
+            owner = CustomUser.objects.filter(pk=group.createdBy.id).first()
+            group.owner = owner.username
             members = UserGroup.objects.filter(group=group).count()
             group.members = members
         ordered = sorted(allGroups, key=operator.attrgetter('members'), reverse=True)
         return ordered
 
 '''
-GET:Show/Search Member (prior main admin and other admin) (only member can search?)
+GET:Show Member 
 '''
 class GroupMemberView(generics.ListAPIView):
-    serializer_class = ListUserSerializer
+    serializer_class = ListMemberSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     @swagger_auto_schema(operation_summary="Get All Group Members In A Group")
-    def get_queryset(self, request):
+    def get_queryset(self):
         group = self.kwargs['groupId']
         search = self.request.GET.get('search')
-        isMember = UserGroup.objects.get(group=group, user=request.user)
-        if isMember is None:
-            return Response({"message": "Not Member of the Group"}, status=status.HTTP_403_FORBIDDEN)
+        role = self.request.GET.get('role')
+        # 1=mainAdmin , 2=Admin ,3=normal member
 
         filter = Q()
         filter &= Q(usergroup__group=group)
@@ -340,18 +341,32 @@ class GroupMemberView(generics.ListAPIView):
             searchTerms = search.split(' ')
             for term in searchTerms:
                 filter &= Q(username__icontains=term)
+        
+        if role == '1':
+            filter &= Q(usergroup__isMainAdmin=True)
+        elif role == '2':
+            filter &= Q(usergroup__isAdmin=True)
+        elif role == '3':
+            filter &= Q(usergroup__isAdmin=False,usergroup__isMainAdmin=False)
 
         allMember = CustomUser.objects.filter(filter)
         for member in allMember:
-            admin = UserGroup.objects.filter(user=member, group=group).first()
-            if admin.isMainAdmin:
-                member.isAdmin = 0
-            elif admin.isAdmin:
-                member.isAdmin = 1
+            member.isMainAdmin = False
+            member.isAdmin = False
+            member.isNormal = False
+            member.isBanned = False
+            type = UserGroup.objects.filter(user=member, group=group).first()
+            if type.isMainAdmin:
+                member.isMainAdmin = True
+            if type.isAdmin:
+                member.isAdmin = True
             else:
-                member.isAdmin = 2
-        ordered = sorted(allMember, key=operator.attrgetter('isAdmin'))
-        return ordered
+                member.isNormal = True
+            if type.isBanned:
+                member.isBanned = True
+
+        return allMember
+
 
 '''
 GET:Show All Admin Request（All result）
@@ -361,11 +376,11 @@ class ShowRequestView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     @swagger_auto_schema(operation_summary="Get All Admin Requests")
-    def get_queryset(self, request):
+    def get_queryset(self):
         group = self.kwargs['groupId']
         search = self.request.GET.get('search')
         result = self.request.GET.get('result')
-        isAdmin = UserGroup.objects.get(group=group, user=request.user, isAdmin=True)
+        isAdmin = UserGroup.objects.get(group=group, user=self.request.user, isAdmin=True)
         if isAdmin:
             filter = Q()
             if search is not None:

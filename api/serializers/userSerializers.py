@@ -285,7 +285,10 @@ class ListUserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'profile']
 
 class ListMemberSerializer(serializers.ModelSerializer):
-    isAdmin = serializers.IntegerField()
+    isAdmin = serializers.BooleanField()
+    isMainAdmin = serializers.BooleanField()
+    isBanned = serializers.BooleanField()
+    isNormal = serializers.BooleanField()
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'profile','isAdmin']
+        fields = ['id', 'username', 'email', 'profile','isMainAdmin','isAdmin','isNormal','isBanned']
