@@ -7,9 +7,10 @@ from ..models.userRelations import UserGroup
 Serializer class for Group Detail
 """
 class GroupDetailSerializer(serializers.ModelSerializer):
+    owner = serializers.CharField(max_length=150)
     class Meta:
         model = Group
-        fields = ['id', 'groupName', 'description', 'category','img', 'createdBy','createdAt']
+        fields = ['id', 'groupName', 'description', 'category','owner','img', 'createdBy','createdAt']
         extra_kwargs = {
             'id': {'read_only': True},
             'createdBy': {'read_only': True},
@@ -19,9 +20,10 @@ class GroupDetailSerializer(serializers.ModelSerializer):
 #include member
 class GroupProfileSerializer(serializers.ModelSerializer):
     members = serializers.IntegerField()
+    owner = serializers.CharField(max_length=150)
     class Meta:
         model = Group
-        fields = ['id', 'groupName', 'description', 'category','img', 'createdBy', 'members','createdAt']
+        fields = ['id', 'groupName', 'description', 'category','img','owner', 'createdBy', 'members','createdAt']
         extra_kwargs = {
             'id': {'read_only': True},
             'createdBy': {'read_only': True},

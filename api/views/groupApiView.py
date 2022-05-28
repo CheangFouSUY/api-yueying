@@ -39,6 +39,8 @@ class GroupDetailView(generics.GenericAPIView):
             group = get_object_or_404(Group, pk=groupId)
             members = UserGroup.objects.filter(group=groupId).count()
             group.members = members
+            owner = CustomUser.objects.filter(pk=group.createdBy.id).first()
+            group.owner = owner.username
             serializer = self.get_serializer(instance=group)
             data = serializer.data
             data['message'] = "Get Group Detail Successfully"
