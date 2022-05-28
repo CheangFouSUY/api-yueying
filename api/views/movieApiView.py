@@ -200,6 +200,8 @@ class MovieReactionView(generics.GenericAPIView):
             tmpUserMovie = UserMovie.objects.get(movie=movieId, user=request.user)  # get one
         except UserMovie.DoesNotExist:
             tmpUserMovie = None
+
+        isRated = False
         rateScore = int(request.data['rateScore'])  # by default, it's a str
         
         if rateScore > 0:
