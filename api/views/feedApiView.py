@@ -10,7 +10,7 @@ from ..serializers.feedSerializers import *
 from ..serializers.userRelationsSerializers import UserFeedDetailSerializer
 from ..models.feeds import Feed
 from ..models.reviews import Review
-from ..models.userRelations import UserFeed
+from ..models.userRelations import UserFeed, UserGroup
 
 
 """ For Admin(superuser)
@@ -195,6 +195,11 @@ class FeedReactionView(generics.GenericAPIView):
     @swagger_auto_schema(operation_summary="React On Feed, ie. Likes, Dislikes")
     def put(self, request, feedId):
         feed = get_object_or_404(Feed, pk=feedId)
+        if not feed.isPublic:
+            group = feed.belongTo
+            groupMember = UserGroup.objects.filter(group=group, user=request.user)
+            if not groupMember:
+                return Response({"message": "Not group member,Unauthorized for react group feed"}, status=status.HTTP_401_UNAUTHORIZED)
         try:
             tmpUserFeed = UserFeed.objects.get(feed=feedId, user=request.user)  # get one
         except UserFeed.DoesNotExist:
