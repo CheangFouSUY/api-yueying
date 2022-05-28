@@ -164,7 +164,16 @@ class ResetPasswordByPasswordSerializer(serializers.Serializer):
         user.updatedAt = timezone.now()
         user.save()
 
+class ResetQuestionSerializer(serializers.Serializer):
+    password = serializers.CharField(style={'input_type': 'password'}, write_only=True)
 
+    class Meta:
+        model = CustomUser
+        fields = ['securityQuestion','securityAnswer']
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
+        super().__init__(*args, **kwargs)
 
 """
 Serializer class for login

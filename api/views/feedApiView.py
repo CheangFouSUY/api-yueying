@@ -37,6 +37,18 @@ class FeedDetailView(generics.GenericAPIView):
             dislikes = allUserFeeds.filter(response='D').count()
             feed.likes = likes
             feed.dislikes = dislikes
+            feed.response = 'O'
+            feed.isFollow = False
+
+            userLike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='L').first()
+            if userLike:
+                feed.response = 'L'
+            userDislike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='D').first()
+            if userDislike:
+                feed.response = 'D'
+            userFollow = UserFeed.objects.filter(user=self.request.user,feed=feed,isFollowed=True).first()
+            if userFollow:
+                feed.isFollow = True
             serializer = self.get_serializer(instance=feed)
             data = serializer.data
             data['message'] = "Get Feed Detail Successfully"
@@ -114,8 +126,9 @@ class FeedListView(generics.ListAPIView):
         createdBy = self.request.GET.get('createdBy')
         # by default, get feed return isPublic = True feed
 
-        if isPublic is None:
-            isPublic = True
+    
+        if isPublic is not None:
+            isPublic = isPublic
 
         filter = Q()
         if search is not None:
@@ -132,10 +145,9 @@ class FeedListView(generics.ListAPIView):
 
         if createdBy is not None:
             filter &= Q(createdBy = createdBy)
-
-        if followedBy is None and createdBy is None:
+            
+        if followedBy is None and createdBy is None and isPublic is not None:
             filter &= Q(isPublic=isPublic)
-
 
         allFeeds = Feed.objects.filter(filter).order_by('-createdAt')
         for feed in allFeeds:
@@ -146,7 +158,19 @@ class FeedListView(generics.ListAPIView):
             feed.likes = likes
             feed.dislikes = dislikes
             feed.reviewers = reviewers
+            feed.response = 'O'
+            feed.isFollow = False
 
+            userLike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='L').first()
+            if userLike:
+                feed.response = 'L'
+            userDislike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='D').first()
+            if userDislike:
+                feed.response = 'D'
+            userFollow = UserFeed.objects.filter(user=self.request.user,feed=feed,isFollowed=True).first()
+            if userFollow:
+                feed.isFollow = True
+        
         if orderBy == 'l':
             orderBy = 'likes'
         elif orderBy == 'd':

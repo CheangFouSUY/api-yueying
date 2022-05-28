@@ -162,6 +162,7 @@ class ResetPasswordbyQuestionView(generics.GenericAPIView):
 
 class ResetSecurityQuestionView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ResetQuestionSerializer
 
     @swagger_auto_schema(operation_summary="Reset Security Question And Answer")
     def put(self, request):

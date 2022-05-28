@@ -41,6 +41,23 @@ class MovieDetailView(generics.GenericAPIView):
             movie.rating = rating['rateScore__avg'] if rating['rateScore__avg'] else 0
             movie.likes = likes
             movie.dislikes = dislikes
+            movie.response = 'O'
+            movie.isRate = False
+            movie.isSave = False
+            movie.score = 0
+            userLike = UserMovie.objects.filter(user=self.request.user,movie=movie,response='L').first()
+            if userLike:
+                movie.response = 'L'
+            userDislike = UserMovie.objects.filter(user=self.request.user,movie=movie,response='D').first()
+            if userDislike:
+                movie.response = 'D'
+            userRate = UserMovie.objects.filter(user=self.request.user,movie=movie,isRated=True).first()
+            if userRate:
+                movie.isRate = True
+                movie.score = userRate.rateScore
+            userSave = UserMovie.objects.filter(user=self.request.user,movie=movie,isSaved=True).first()
+            if userSave:
+                movie.isSave = True
             serializer = self.get_serializer(instance=movie)
             data = serializer.data
             data['message'] = "Get Movie Detail Successfully"
@@ -134,6 +151,23 @@ class MovieListView(generics.ListAPIView):
             movie.rating = rating['rateScore__avg'] if rating['rateScore__avg'] else 0
             movie.likes = likes
             movie.dislikes = dislikes
+            movie.response = 'O'
+            movie.isRate = False
+            movie.isSave = False
+            movie.score = 0
+            userLike = UserMovie.objects.filter(user=self.request.user,movie=movie,response='L').first()
+            if userLike:
+                movie.response = 'L'
+            userDislike = UserMovie.objects.filter(user=self.request.user,movie=movie,response='D').first()
+            if userDislike:
+                movie.response = 'D'
+            userRate = UserMovie.objects.filter(user=self.request.user,movie=movie,isRated=True).first()
+            if userRate:
+                movie.isRate = True
+                movie.score = userRate.rateScore
+            userSave = UserMovie.objects.filter(user=self.request.user,movie=movie,isSaved=True).first()
+            if userSave:
+                movie.isSave = True
 
         if orderBy == 'l':
             orderBy = 'likes'
@@ -158,13 +192,23 @@ class MovieReactionView(generics.GenericAPIView):
 
     @swagger_auto_schema(operation_summary="React On Movie, ie. Likes, Dislikes, Rating")
     def put(self, request, movieId):
+        request.data._mutable = True
         movie = get_object_or_404(Movie, pk=movieId)
         try:
             tmpUserMovie = UserMovie.objects.get(movie=movieId, user=request.user)  # get one
         except UserMovie.DoesNotExist:
             tmpUserMovie = None
         rateScore = int(request.data['rateScore'])  # by default, it's a str
-        isRated = True if rateScore > 0 else False
+        
+        if rateScore > 0:
+            isRated = True
+        else:
+            if tmpUserMovie:
+                if tmpUserMovie.rateScore > 0:
+                    request.data['rateScore'] = tmpUserMovie.rateScore
+                    isRated = True
+                else:
+                    isRated = False
         if tmpUserMovie:
             """
                 instance take one, but filter return list, so need to specify index.
