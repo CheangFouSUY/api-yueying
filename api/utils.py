@@ -43,7 +43,7 @@ def send_smtp(user, request, token, subject, fileName):
     email.send(fail_silently=False)
 
 # Image compression, have quality and height, width is with respect to height
-def get_thumbnail(f, quality, isThumbnail):
+def get_thumbnail(f, quality, isThumbnail, ratio):
     try:
         maxWidthHeight = 256 if isThumbnail else 1024
         image = Image.open(f)
@@ -53,9 +53,11 @@ def get_thumbnail(f, quality, isThumbnail):
         if isThumbnail:
             name += '-thumbnail'
 
-        
+        if ratio != 0: # incase ratio is not defined
+            finalHeight = maxWidthHeight
+            finalWidth = int (maxWidthHeight * ratio)
         # don't resize if it's smaller than maxWidthHeight
-        if baseWidth <= maxWidthHeight and baseHeight <= maxWidthHeight:
+        elif baseWidth <= maxWidthHeight and baseHeight <= maxWidthHeight:
             finalWidth = baseWidth
             finalHeight = baseHeight
         elif baseWidth > baseHeight:

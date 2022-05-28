@@ -39,16 +39,16 @@ class FeedDetailView(generics.GenericAPIView):
             feed.dislikes = dislikes
             feed.response = 'O'
             feed.isFollow = False
-
-            userLike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='L').first()
-            if userLike:
-                feed.response = 'L'
-            userDislike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='D').first()
-            if userDislike:
-                feed.response = 'D'
-            userFollow = UserFeed.objects.filter(user=self.request.user,feed=feed,isFollowed=True).first()
-            if userFollow:
-                feed.isFollow = True
+            if not request.user.is_anonymous:
+                userLike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='L').first()
+                if userLike:
+                    feed.response = 'L'
+                userDislike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='D').first()
+                if userDislike:
+                    feed.response = 'D'
+                userFollow = UserFeed.objects.filter(user=self.request.user,feed=feed,isFollowed=True).first()
+                if userFollow:
+                    feed.isFollow = True
             serializer = self.get_serializer(instance=feed)
             data = serializer.data
             data['message'] = "Get Feed Detail Successfully"
@@ -161,16 +161,17 @@ class FeedListView(generics.ListAPIView):
             feed.response = 'O'
             feed.isFollow = False
 
-            userLike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='L').first()
-            if userLike:
-                feed.response = 'L'
-            userDislike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='D').first()
-            if userDislike:
-                feed.response = 'D'
-            userFollow = UserFeed.objects.filter(user=self.request.user,feed=feed,isFollowed=True).first()
-            if userFollow:
-                feed.isFollow = True
-        
+            if not self.request.user.is_anonymous:
+                userLike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='L').first()
+                if userLike:
+                    feed.response = 'L'
+                userDislike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='D').first()
+                if userDislike:
+                    feed.response = 'D'
+                userFollow = UserFeed.objects.filter(user=self.request.user,feed=feed,isFollowed=True).first()
+                if userFollow:
+                    feed.isFollow = True
+
         if orderBy == 'l':
             orderBy = 'likes'
         elif orderBy == 'd':

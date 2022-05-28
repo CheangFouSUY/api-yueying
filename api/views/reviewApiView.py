@@ -38,12 +38,13 @@ class ReviewDetailView(generics.GenericAPIView):
             review.likes = likes
             review.dislikes = dislikes
             review.response = 'O'
-            userLike = UserReview.objects.filter(user=self.request.user,review=review,response='L').first()
-            if userLike:
-                review.response = 'L'
-            userDislike = UserReview.objects.filter(user=self.request.user,review=review,response='D').first()
-            if userDislike:
-                review.response = 'D'
+            if not request.user.is_anonymous:
+                userLike = UserReview.objects.filter(user=self.request.user,review=review,response='L').first()
+                if userLike:
+                    review.response = 'L'
+                userDislike = UserReview.objects.filter(user=self.request.user,review=review,response='D').first()
+                if userDislike:
+                    review.response = 'D'
             serializer = self.get_serializer(instance=review)
             data = serializer.data
             data['message'] = "Get Review Detail Successfully"
@@ -146,12 +147,13 @@ class ReviewListView(generics.ListAPIView):
             review.dislikes = dislikes
             review.response = 'O'
 
-            userLike = UserReview.objects.filter(user=self.request.user,review=review,response='L').first()
-            if userLike:
-                review.response = 'L'
-            userDislike = UserReview.objects.filter(user=self.request.user,review=review,response='D').first()
-            if userDislike:
-                review.response = 'D'
+            if not self.request.user.is_anonymous:
+                userLike = UserReview.objects.filter(user=self.request.user,review=review,response='L').first()
+                if userLike:
+                    review.response = 'L'
+                userDislike = UserReview.objects.filter(user=self.request.user,review=review,response='D').first()
+                if userDislike:
+                    review.response = 'D'
 
         if orderBy == 'd':
             orderBy = 'dislikes'

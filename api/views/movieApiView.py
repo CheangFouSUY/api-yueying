@@ -45,19 +45,20 @@ class MovieDetailView(generics.GenericAPIView):
             movie.isRate = False
             movie.isSave = False
             movie.score = 0
-            userLike = UserMovie.objects.filter(user=self.request.user,movie=movie,response='L').first()
-            if userLike:
-                movie.response = 'L'
-            userDislike = UserMovie.objects.filter(user=self.request.user,movie=movie,response='D').first()
-            if userDislike:
-                movie.response = 'D'
-            userRate = UserMovie.objects.filter(user=self.request.user,movie=movie,isRated=True).first()
-            if userRate:
-                movie.isRate = True
-                movie.score = userRate.rateScore
-            userSave = UserMovie.objects.filter(user=self.request.user,movie=movie,isSaved=True).first()
-            if userSave:
-                movie.isSave = True
+            if not request.user.is_anonymous:
+                userLike = UserMovie.objects.filter(user=self.request.user,movie=movie,response='L').first()
+                if userLike:
+                    movie.response = 'L'
+                userDislike = UserMovie.objects.filter(user=self.request.user,movie=movie,response='D').first()
+                if userDislike:
+                    movie.response = 'D'
+                userRate = UserMovie.objects.filter(user=self.request.user,movie=movie,isRated=True).first()
+                if userRate:
+                    movie.isRate = True
+                    movie.score = userRate.rateScore
+                userSave = UserMovie.objects.filter(user=self.request.user,movie=movie,isSaved=True).first()
+                if userSave:
+                    movie.isSave = True
             serializer = self.get_serializer(instance=movie)
             data = serializer.data
             data['message'] = "Get Movie Detail Successfully"
@@ -155,19 +156,20 @@ class MovieListView(generics.ListAPIView):
             movie.isRate = False
             movie.isSave = False
             movie.score = 0
-            userLike = UserMovie.objects.filter(user=self.request.user,movie=movie,response='L').first()
-            if userLike:
-                movie.response = 'L'
-            userDislike = UserMovie.objects.filter(user=self.request.user,movie=movie,response='D').first()
-            if userDislike:
-                movie.response = 'D'
-            userRate = UserMovie.objects.filter(user=self.request.user,movie=movie,isRated=True).first()
-            if userRate:
-                movie.isRate = True
-                movie.score = userRate.rateScore
-            userSave = UserMovie.objects.filter(user=self.request.user,movie=movie,isSaved=True).first()
-            if userSave:
-                movie.isSave = True
+            if not self.request.user.is_anonymous:
+                userLike = UserMovie.objects.filter(user=self.request.user,movie=movie,response='L').first()
+                if userLike:
+                    movie.response = 'L'
+                userDislike = UserMovie.objects.filter(user=self.request.user,movie=movie,response='D').first()
+                if userDislike:
+                    movie.response = 'D'
+                userRate = UserMovie.objects.filter(user=self.request.user,movie=movie,isRated=True).first()
+                if userRate:
+                    movie.isRate = True
+                    movie.score = userRate.rateScore
+                userSave = UserMovie.objects.filter(user=self.request.user,movie=movie,isSaved=True).first()
+                if userSave:
+                    movie.isSave = True
 
         if orderBy == 'l':
             orderBy = 'likes'
