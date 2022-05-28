@@ -10,6 +10,7 @@ from ..serializers.reviewSerializers import *
 from ..serializers.userRelationsSerializers import UserReviewDetailSerializer
 from ..utils import *
 from ..models.reviews import Review
+from ..models.feeds import Feed
 from ..models.userRelations import *
 
 
@@ -91,12 +92,20 @@ class ReviewCreateView(generics.CreateAPIView):
 
     @swagger_auto_schema(operation_summary="Create Review")
     def post(self, request):
+        feed = request.data.get('feed', '') or None
+        feed = get_object_or_404(Feed, pk=feed)
+        if feed:
+            if not feed.isPublic:
+                group = feed.belongTo
+                groupMember = UserGroup.objects.filter(group=group,user=request.user)
+                if not groupMember:
+                    return Response({"message": "Not group member,Unauthorized to review group feed"}, status=status.HTTP_401_UNAUTHORIZED)
         try:
             user = request.user
             data = request.data
-            data.feed = request.data['feed'] or None
-            data.book = request.data['book'] or None
-            data.movie = request.data['movie'] or None
+            data.feed = request.data.get('feed', '') or None
+            data.book = request.data.get('book', '') or None
+            data.movie = request.data.get('movie', '') or None
             serializer = self.get_serializer(data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save(createdBy=user)
@@ -177,6 +186,14 @@ class ReviewReactionView(generics.GenericAPIView):
     @swagger_auto_schema(operation_summary="React On Review, ie. Likes, Dislikes")
     def put(self, request, reviewId):
         review = get_object_or_404(Review, pk=reviewId)
+        if review.feed:
+            feed = get_object_or_404(Feed, pk=review.feed.id)
+            if not feed.isPublic:
+                group = feed.belongTo
+                groupMember = UserGroup.objects.filter(group=group,user=request.user)
+                if not groupMember:
+                    return Response({"message": "Not group member,Unauthorized to react group feed's review"}, status=status.HTTP_401_UNAUTHORIZED)
+
         try:
             tmpUserReview = UserReview.objects.get(review=reviewId, user=request.user)  # get one
         except UserReview.DoesNotExist:

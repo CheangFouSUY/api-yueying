@@ -199,7 +199,7 @@ class FeedReactionView(generics.GenericAPIView):
             group = feed.belongTo
             groupMember = UserGroup.objects.filter(group=group, user=request.user)
             if not groupMember:
-                return Response({"message": "Not group member,Unauthorized for react group feed"}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response({"message": "Not group member,Unauthorized to react group feed"}, status=status.HTTP_401_UNAUTHORIZED)
         try:
             tmpUserFeed = UserFeed.objects.get(feed=feedId, user=request.user)  # get one
         except UserFeed.DoesNotExist:
