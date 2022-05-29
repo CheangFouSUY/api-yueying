@@ -335,10 +335,18 @@ class GroupMemberView(generics.ListAPIView):
         group = self.kwargs['groupId']
         search = self.request.GET.get('search')
         role = self.request.GET.get('role')
+        isBan = self.request.GET.get('isBan')
         # 1=mainAdmin , 2=Admin ,3=normal member
 
+        allBannedMember = UserGroup.objects.filter(group=group, isBanned=True)
+        for member in allBannedMember:
+            if member.banDue < timezone.now():
+                member.isBanned=False
+                member.save()
+
         filter = Q()
-        filter &= Q(usergroup__group=group)
+        filter &= Q(usergroup__group=group,)
+
         if search is not None:
             searchTerms = search.split(' ')
             for term in searchTerms:
@@ -350,6 +358,11 @@ class GroupMemberView(generics.ListAPIView):
             filter &= Q(usergroup__isAdmin=True)
         elif role == '3':
             filter &= Q(usergroup__isAdmin=False,usergroup__isMainAdmin=False)
+
+        if isBan == "True":
+            filter &= Q(usergroup__isBanned=True)
+        else:
+            filter &= Q(usergroup__isBanned=False)
 
         allMember = CustomUser.objects.filter(filter)
         for member in allMember:

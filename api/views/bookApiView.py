@@ -3,6 +3,7 @@ from urllib import response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Avg, Q
+from platformdirs import user_config_dir
 from requests import request
 from rest_framework.response import Response
 from rest_framework import generics, status, permissions
@@ -46,19 +47,17 @@ class BookDetailView(generics.GenericAPIView):
             book.isSave = False
             book.score = 0
             if not request.user.is_anonymous:
-                userLike = UserBook.objects.filter(user=self.request.user,book=book,response='L').first()
-                if userLike:
-                    book.response = 'L'
-                userDislike = UserBook.objects.filter(user=self.request.user,book=book,response='D').first()
-                if userDislike:
-                    book.response = 'D'
-                userRate = UserBook.objects.filter(user=self.request.user,book=book,isRated=True).first()
-                if userRate:
-                    book.isRate = True
-                    book.score = userRate.rateScore
-                userSave = UserBook.objects.filter(user=self.request.user,book=book,isSaved=True).first()
-                if userSave:
-                    book.isSave = True
+                userbook = UserBook.objects.filter(user=self.request.user,book=book,response='L').first()
+                if userbook:
+                    if userbook.response == 'L':
+                        book.response = 'L'
+                    if userbook.response == 'D':
+                        book.response = 'D'
+                    if userbook.isRated:
+                        book.isRate = True
+                        book.score = userbook.rateScore
+                    if userbook.isSaved:
+                        book.isSave = True
             serializer = self.get_serializer(instance=book)
             data = serializer.data
             data['message'] = "Get Book Detail Successfully"
@@ -156,19 +155,17 @@ class BookListView(generics.ListAPIView):
             book.isSave = False
             book.score = 0
             if not self.request.user.is_anonymous:
-                userLike = UserBook.objects.filter(user=self.request.user,book=book,response='L').first()
-                if userLike:
-                    book.response = 'L'
-                userDislike = UserBook.objects.filter(user=self.request.user,book=book,response='D').first()
-                if userDislike:
-                    book.response = 'D'
-                userRate = UserBook.objects.filter(user=self.request.user,book=book,isRated=True).first()
-                if userRate:
-                    book.isRate = True
-                    book.score = userRate.rateScore
-                userSave = UserBook.objects.filter(user=self.request.user,book=book,isSaved=True).first()
-                if userSave:
-                    book.isSave = True
+                userbook = UserBook.objects.filter(user=self.request.user,book=book,response='L').first()
+                if userbook:
+                    if userbook.response == 'L':
+                        book.response = 'L'
+                    if userbook.response == 'D':
+                        book.response = 'D'
+                    if userbook.isRated:
+                        book.isRate = True
+                        book.score = userbook.rateScore
+                    if userbook.isSaved:
+                        book.isSave = True
 
         if orderBy == 'l':
             orderBy = 'likes'

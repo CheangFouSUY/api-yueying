@@ -40,12 +40,12 @@ class ReviewDetailView(generics.GenericAPIView):
             review.dislikes = dislikes
             review.response = 'O'
             if not request.user.is_anonymous:
-                userLike = UserReview.objects.filter(user=self.request.user,review=review,response='L').first()
-                if userLike:
-                    review.response = 'L'
-                userDislike = UserReview.objects.filter(user=self.request.user,review=review,response='D').first()
-                if userDislike:
-                    review.response = 'D'
+                userreview = UserReview.objects.filter(user=self.request.user,review=review).first()
+                if userreview:
+                    if userreview.response == 'L':
+                        review.response = 'L'
+                    if userreview.response == 'D':
+                        review.response = 'D'
             serializer = self.get_serializer(instance=review)
             data = serializer.data
             data['message'] = "Get Review Detail Successfully"
@@ -97,9 +97,12 @@ class ReviewCreateView(generics.CreateAPIView):
         if feed:
             if not feed.isPublic:
                 group = feed.belongTo
-                groupMember = UserGroup.objects.filter(group=group,user=request.user)
-                if not groupMember:
-                    return Response({"message": "Not group member,Unauthorized to review group feed"}, status=status.HTTP_401_UNAUTHORIZED)
+                groupMember = UserGroup.objects.filter(group=group,user=request.user).first()
+                if not groupMember or groupMember.banDue > timezone.now():
+                    return Response({"message": "Not group member/Banned Member,Unauthorized to review group feed"}, status=status.HTTP_401_UNAUTHORIZED)
+                elif groupMember.banDue < timezone.now():
+                    groupMember.isBanned=False
+                    groupMember.save()
         try:
             user = request.user
             data = request.data
@@ -157,12 +160,12 @@ class ReviewListView(generics.ListAPIView):
             review.response = 'O'
 
             if not self.request.user.is_anonymous:
-                userLike = UserReview.objects.filter(user=self.request.user,review=review,response='L').first()
-                if userLike:
-                    review.response = 'L'
-                userDislike = UserReview.objects.filter(user=self.request.user,review=review,response='D').first()
-                if userDislike:
-                    review.response = 'D'
+                userreview = UserReview.objects.filter(user=self.request.user,review=review).first()
+                if userreview:
+                    if userreview.response == 'L':
+                        review.response = 'L'
+                    if userreview.response == 'D':
+                        review.response = 'D'
 
         if orderBy == 'd':
             orderBy = 'dislikes'
@@ -190,10 +193,12 @@ class ReviewReactionView(generics.GenericAPIView):
             feed = get_object_or_404(Feed, pk=review.feed.id)
             if not feed.isPublic:
                 group = feed.belongTo
-                groupMember = UserGroup.objects.filter(group=group,user=request.user)
-                if not groupMember:
-                    return Response({"message": "Not group member,Unauthorized to react group feed's review"}, status=status.HTTP_401_UNAUTHORIZED)
-
+                groupMember = UserGroup.objects.filter(group=group,user=request.user).first()
+                if not groupMember or groupMember.banDue > timezone.now():
+                    return Response({"message": "Not group member/Banned Member,Unauthorized to react group feed's review"}, status=status.HTTP_401_UNAUTHORIZED)
+                elif groupMember.banDue < timezone.now():
+                    groupMember.isBanned=False
+                    groupMember.save()
         try:
             tmpUserReview = UserReview.objects.get(review=reviewId, user=request.user)  # get one
         except UserReview.DoesNotExist:

@@ -40,15 +40,14 @@ class FeedDetailView(generics.GenericAPIView):
             feed.response = 'O'
             feed.isFollow = False
             if not request.user.is_anonymous:
-                userLike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='L').first()
-                if userLike:
-                    feed.response = 'L'
-                userDislike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='D').first()
-                if userDislike:
-                    feed.response = 'D'
-                userFollow = UserFeed.objects.filter(user=self.request.user,feed=feed,isFollowed=True).first()
-                if userFollow:
-                    feed.isFollow = True
+                userfeed = UserFeed.objects.filter(user=self.request.user,feed=feed).first()
+                if userfeed:
+                    if userfeed.response == 'L':
+                        feed.response = 'L'
+                    if userfeed.response == 'D':
+                        feed.response = 'D'
+                    if userfeed.isFollowed:
+                        feed.isFollow = True
             serializer = self.get_serializer(instance=feed)
             data = serializer.data
             data['message'] = "Get Feed Detail Successfully"
@@ -162,15 +161,14 @@ class FeedListView(generics.ListAPIView):
             feed.isFollow = False
 
             if not self.request.user.is_anonymous:
-                userLike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='L').first()
-                if userLike:
-                    feed.response = 'L'
-                userDislike = UserFeed.objects.filter(user=self.request.user,feed=feed,response='D').first()
-                if userDislike:
-                    feed.response = 'D'
-                userFollow = UserFeed.objects.filter(user=self.request.user,feed=feed,isFollowed=True).first()
-                if userFollow:
-                    feed.isFollow = True
+                userfeed = UserFeed.objects.filter(user=self.request.user,feed=feed).first()
+                if userfeed:
+                    if userfeed.response == 'L':
+                        feed.response = 'L'
+                    if userfeed.response == 'D':
+                        feed.response = 'D'
+                    if userfeed.isFollowed:
+                        feed.isFollow = True
 
         if orderBy == 'l':
             orderBy = 'likes'
@@ -197,9 +195,13 @@ class FeedReactionView(generics.GenericAPIView):
         feed = get_object_or_404(Feed, pk=feedId)
         if not feed.isPublic:
             group = feed.belongTo
-            groupMember = UserGroup.objects.filter(group=group, user=request.user)
-            if not groupMember:
-                return Response({"message": "Not group member,Unauthorized to react group feed"}, status=status.HTTP_401_UNAUTHORIZED)
+            groupMember = UserGroup.objects.filter(group=group, user=request.user).first()
+            if not groupMember or groupMember.banDue > timezone.now():
+                return Response({"message": "Not group member/Banned Member,Unauthorized to react group feed"}, status=status.HTTP_401_UNAUTHORIZED)
+            elif groupMember.banDue < timezone.now():
+                groupMember.isBanned=False
+                groupMember.save()
+        
         try:
             tmpUserFeed = UserFeed.objects.get(feed=feedId, user=request.user)  # get one
         except UserFeed.DoesNotExist:
