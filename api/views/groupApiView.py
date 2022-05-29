@@ -162,11 +162,18 @@ class GroupFeedCreateView(generics.CreateAPIView):
             serializer.save(createdBy=request.user, isPublic=False ,belongTo=group)
 
             # add GroupFeed
-            group = get_object_or_404(Group, pk=groupId)
-            feed = get_object_or_404(Feed, pk=serializer.data["id"])
+            group = Group.objects.get(pk=groupId)
+            feed = Feed.objects.get(pk=serializer.data["id"])
             Groupfeed = GroupFeed(group=group, feed=feed)
             Groupfeed.save()
             data = serializer.data
+
+            #add UserFeed
+            feed = Feed.objects.get(pk=serializer.data["id"])
+            userFeed = UserFeed(feed=feed,user=request.user)
+            userFeed.isFollowed = True
+            userFeed.save()
+
             data['message'] = "Create Feed Successfully"
             return Response(data, status=status.HTTP_201_CREATED)
         return Response({"message": "Not Group Member."}, status=status.HTTP_401_UNAUTHORIZED)

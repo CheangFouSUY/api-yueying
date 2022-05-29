@@ -101,6 +101,12 @@ class FeedCreateView(generics.CreateAPIView):
             serializer.is_valid(raise_exception=True)
             serializer.save(createdBy=user, isPublic=True)
             data = serializer.data
+
+            feed = Feed.objects.get(pk=serializer.data["id"])
+            userFeed = UserFeed(feed=feed,user=request.user)
+            userFeed.isFollowed = True
+            userFeed.save()
+
             data['message'] = "Create Feed Successfully"
             return Response(data, status=status.HTTP_201_CREATED)
         except:
