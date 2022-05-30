@@ -18,6 +18,11 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 
+'''
+    path('group/deleteAdmin/<uuid:groupId>/<uuid:userId>',AdminDeleteView.as_view(),name="group_admin_remove"),
+        # PUT : switch group main admin
+    path('group/switchAdmin/<uuid:groupId>/<uuid:userId>',MainAdminSwitchView.as_view(),name="group_admin_switch"),
+'''
 
 
 urlpatterns = [
@@ -66,10 +71,8 @@ urlpatterns = [
         # POST : apply to become group admin
     path('group/admin/<uuid:groupId>', GroupAdminRequestView.as_view(), name="group_admin_apply"),
         # PUT : set group admin
-    path('group/setAdmin/<uuid:groupId>/<uuid:userId>/<int:result>',AdminSetView.as_view(),name="group_admin_set"),
-    path('group/deleteAdmin/<uuid:groupId>/<uuid:userId>',AdminDeleteView.as_view(),name="group_admin_remove"),
-        # PUT : switch group main admin
-    path('group/switchAdmin/<uuid:groupId>/<uuid:userId>',MainAdminSwitchView.as_view(),name="group_admin_switch"),
+    path('group/setRole/<uuid:groupId>/<uuid:userId>/<int:role>',SetRoleView.as_view(),name="group_set_role"),
+
         # DELETE : Delete group feed
     path('group/delFeed/<uuid:groupId>/<uuid:feedId>',GroupFeedDeleteView.as_view(),name="group_feed_delete"),
         # PUT : Ban Member
@@ -114,3 +117,4 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('token/verify/', TokenVerifyView.as_view(), name='token_verfy'), 
 ]
+    

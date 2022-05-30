@@ -1,4 +1,5 @@
 import operator
+from tokenize import group
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.response import Response
@@ -20,6 +21,45 @@ from ..models.groupRelations import *
 PUT:Set Group Admin -- admin and creator
 PUT: Manage admin request
 '''
+class SetRoleView(generics.GenericAPIView):
+    serializer_class = UserGroupDetailSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    @swagger_auto_schema(operation_summary="Set Group Role")
+    def put(self,request,groupId,userId,role):
+        userAdmin = get_object_or_404(UserGroup, group=groupId,user=request.user)
+        targetUser = get_object_or_404(UserGroup, group=groupId, user=userId)
+
+        if userAdmin.isAdmin or userAdmin.isMainAdmin:
+                if role == 1:
+                    if userAdmin.isMainAdmin:
+                        targetUser.isMainAdmin = True
+                        userAdmin.isMainAdmin = False
+                        targetUser.save()
+                        userAdmin.save()
+                        return Response({"message": "Set Main Admin Successfully."}, status=status.HTTP_200_OK)
+                    else:
+                        return Response({"message": "Not Main Admin."}, status=status.HTTP_401_UNAUTHORIZED)
+                
+                if role == 2:
+                    targetUser.isAdmin = True
+                    request = GroupAdminRequest.objects.filter(group=groupId,user=targetUser.id).first()
+                    targetUser.save()
+                    if request:
+                        request.result = 1
+                        request.save()
+                    return Response({"message": "Set Admin Successfully."}, status=status.HTTP_200_OK)
+               
+                if role == 3:
+                    targetUser.isAdmin = False
+                    targetUser.isMainAdmin = False
+                    targetUser.save()
+                    return Response({"message": "Set Normal Member Successfully."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "Not Group Admin."}, status=status.HTTP_401_UNAUTHORIZED)
+            
+
+'''      
 class AdminSetView(generics.GenericAPIView):
     serializer_class = UserGroupDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -51,7 +91,7 @@ class AdminSetView(generics.GenericAPIView):
                 return Response({"message": "Request was decline"}, status=status.HTTP_200_OK)
         else:
             return Response({"message": "No Permission."}, status=status.HTTP_401_UNAUTHORIZED)
-
+'''
 '''
 PUT:Delete Group Admin -- only main admin
 '''
@@ -269,3 +309,5 @@ class GroupMemberBanView(generics.GenericAPIView):
             data['message'] = "Ban Member Successfully"
             return Response(data, status=status.HTTP_200_OK)
         return Response({"message": "No Permission."}, status=status.HTTP_401_UNAUTHORIZED)
+
+

@@ -244,10 +244,13 @@ class ShowUserGroupView(generics.ListAPIView):
     def get_queryset(self):
         allGroups = Group.objects.filter(usergroup__user=self.request.user)
         for group in allGroups:
+            owner = CustomUser.objects.filter(pk=group.createdBy.id).first()
+            group.owner = owner.username
             members = UserGroup.objects.filter(group=group).count()
             group.members = members
         ordered = sorted(allGroups, key=operator.attrgetter('members'), reverse=True)
         return ordered
+
 
 ### Inside Group ###
 '''
