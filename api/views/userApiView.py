@@ -12,7 +12,35 @@ from ..serializers.userSerializers import *
 from ..utils import get_tokens, send_smtp
 from ..models.users import CustomUser
 from ..models.userRelations import *
+import re
 
+
+
+def UserValidation(email,username,password,password2,mode):
+    
+    if mode == 0:
+        if CustomUser.objects.filter(email=email).exists():
+            return 1001
+
+        if CustomUser.objects.filter(username=username).exists():
+            return 1002
+
+    if password != password2:
+        return 1003
+    
+    if len(password) < 8:
+        return 1004
+
+    if password.isalnum():
+        test = re.search(r"\W",password)
+        if test is None:
+            return 1004
+        else:
+            return 200
+    else:
+        return 1004
+
+    
 """
 POST: Register
 """
@@ -23,6 +51,22 @@ class UserRegisterView(generics.GenericAPIView):
     @swagger_auto_schema(operation_summary="Register New User")
     def post(self, request):
         try:
+            email = request.data.get('email', '')
+            username = request.data.get('username', '')
+            password = request.data.get('password', '')
+            password2 = request.data.get('password2', '')
+
+            code = UserValidation(email,username,password,password2,0)
+
+            if code == 1001:
+                return Response({"message": "Email is taken.","code":code}, status=status.HTTP_400_BAD_REQUEST)
+            elif code == 1002:
+                return Response({"message": "Username is taken.","code":code}, status=status.HTTP_400_BAD_REQUEST)
+            elif code == 1003:
+                return Response({"message": "Password not match.","code":code}, status=status.HTTP_400_BAD_REQUEST)
+            elif code == 1004:
+                return Response({"message": "Password too simple.","code":code}, status=status.HTTP_400_BAD_REQUEST)
+
             serializer = self.serializer_class(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -119,11 +163,19 @@ class ResetPasswordbyOldpasswordView(generics.GenericAPIView):
             user = CustomUser.objects.get(username=username)
             result = user.check_password(oldpassword)
             if result:
+                newpassword = request.data['newpassword']
+                newpassword2 = request.data['newpassword2']
+                code = UserValidation(None,None,newpassword,newpassword2,1)
+                
+                if code == 1003:
+                    return Response({"message": "Password not match.","code":code}, status=status.HTTP_400_BAD_REQUEST)
+                elif code == 1004:
+                    return Response({"message": "Password too simple.","code":code}, status=status.HTTP_400_BAD_REQUEST)
+
                 serializer = self.get_serializer(data=request.data, user=self.request.user)
-                if serializer.is_valid(raise_exception=True):
-                    serializer.updatePassword()
+                serializer.updatePassword()
                     # When update success, should terminate the token, so it cannot be used again
-                    return Response({"message": "Password Reset Successfully"}, status=status.HTTP_200_OK)
+                return Response({"message": "Password Reset Successfully"}, status=status.HTTP_200_OK)
             else:
                 return Response({"message": "Old Password Is Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
         except:
@@ -135,8 +187,7 @@ class ResetPasswordbyQuestionView(generics.GenericAPIView):
 
     @swagger_auto_schema(operation_summary="Reset Password Through Answering Security Question")
     def put(self, request):
-        try:
-            username = request.data['username']
+            username = request.data['username']  #需要给username,不是自动拿request.user
             questionNo = int(request.data['securityQuestion'])
             answer = request.data['securityAnswer'].lower()
             answer = make_password(answer,"a","pbkdf2_sha1")
@@ -148,17 +199,23 @@ class ResetPasswordbyQuestionView(generics.GenericAPIView):
 
             if questionNo == correctNo:
                 if correctAns == answer:
+                    newpassword = request.data['newpassword']
+                    newpassword2 = request.data['newpassword2']
+                    code = UserValidation(None,None,newpassword,newpassword2,1)
+                    
+                    if code == 1003:
+                        return Response({"message": "Password not match.","code":code}, status=status.HTTP_400_BAD_REQUEST)
+                    elif code == 1004:
+                        return Response({"message": "Password too simple.","code":code}, status=status.HTTP_400_BAD_REQUEST)
+
                     serializer = self.get_serializer(data=request.data, user=user)
-                    if serializer.is_valid(raise_exception=True):
-                        serializer.updatePassword()
+                    serializer.updatePassword()
                         # When update success, should terminate the token, so it cannot be used again
-                        return Response({"message": "Password Reset Successfully"}, status=status.HTTP_200_OK)
+                    return Response({"message": "Password Reset Successfully"}, status=status.HTTP_200_OK)
                 else:
                     return Response({"message": "Security Answer Is Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({"message": "Security Question Is Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
-        except:
-            return Response({"message": "Password Reset Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
 class ResetSecurityQuestionView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]

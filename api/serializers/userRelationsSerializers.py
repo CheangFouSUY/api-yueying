@@ -7,6 +7,7 @@ from ..models.feeds import Feed
 from ..models.reviews import Review
 from ..models.users import CustomUser
 from ..models.userRelations import *
+from rest_framework.response import Response
 
 class UserBookDetailSerializer(serializers.ModelSerializer):
     class Meta:

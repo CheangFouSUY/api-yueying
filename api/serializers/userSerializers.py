@@ -10,6 +10,7 @@ from ..models.users import CustomUser
 from .userRelationsSerializers import UserBookDetailSerializer, UserFeedDetailSerializer, UserMovieDetailSerializer
 from django.contrib.auth.hashers import make_password,check_password
 
+
 """
 Serializer class for registering new user
 """
@@ -21,25 +22,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ['email','username','password', 'password2','securityQuestion','securityAnswer']
         extra_kwargs = { 'password': {'write_only': True}, }
-    
-    def validate(self, attrs):
-        email = attrs.get('email', '')
-        username = attrs.get('username', '')
-        password = attrs.get('password', '')
-        password2 = attrs.get('password2', '')
-
-        if CustomUser.objects.filter(email=email).exists():
-            raise ValidationError("Email is taken.")
-
-        if CustomUser.objects.filter(username=username).exists():
-            raise ValidationError("Username is taken.")
-
-        if password != password2:
-            raise ValidationError("Password must match.")
-        
-        # uses validators listed in settings.
-        if validate_password(password) is None:
-            return super().validate(attrs)
     
     def save(self):
         instance = self.Meta.model(
@@ -119,17 +101,6 @@ class ResetPasswordByQuestionSerializer(serializers.Serializer):
         self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
 
-    def validate(self, attrs):
-        password = attrs.get('newpassword', '')
-        password2 = attrs.get('newpassword2', '')
-        
-        if password != password2:
-            raise ValidationError("Password must match.")
-
-        # uses validators listed in settings.
-        if validate_password(password) is None:
-            return super().validate(attrs)
-
     def updatePassword(self):
         password = self.validated_data['newpassword']
         user = self.user
@@ -145,17 +116,6 @@ class ResetPasswordByPasswordSerializer(serializers.Serializer):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
-
-    def validate(self, attrs):
-        password = attrs.get('newpassword', '')
-        password2 = attrs.get('newpassword2', '')
-        
-        if password != password2:
-            raise ValidationError("Password must match.")
-
-        # uses validators listed in settings.
-        if validate_password(password) is None:
-            return super().validate(attrs)
 
     def updatePassword(self):
         password = self.validated_data['newpassword']
@@ -267,7 +227,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
         if CustomUser.objects.filter(username=username).exists():
             raise ValidationError("Username is taken.")
-
+    
     def save(self):
         instance = self.Meta.model(
             email=self.validated_data['email'],
