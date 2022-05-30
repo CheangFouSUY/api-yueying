@@ -10,6 +10,7 @@ from ..serializers.feedSerializers import *
 from ..serializers.userRelationsSerializers import UserFeedDetailSerializer
 from ..models.feeds import Feed
 from ..models.reviews import Review
+from ..models.groups import Group
 from ..models.userRelations import UserFeed, UserGroup
 
 
@@ -75,14 +76,16 @@ class FeedDetailView(generics.GenericAPIView):
     # Delete Feed By Id
     @swagger_auto_schema(operation_summary="Delete Feed By Id")
     def delete(self, request, feedId):
-        try:
             feed = get_object_or_404(Feed, pk=feedId)
-            if not request.user.is_staff and request.user != feed.createdBy:
+            if not feed.isPublic:
+                group = get_object_or_404(Group, pk=feed.belongTo.id)
+
+            admin = UserGroup.objects.filter(user=request.user,group=group.id).first()
+            if not request.user.is_staff and request.user != feed.createdBy and not admin.isAdmin and not admin.isMainAdmin:
                 return Response({"message": "Unauthorized for delete feed"}, status=status.HTTP_401_UNAUTHORIZED)
             feed.delete()
             return Response({"message": "Delete Feed Successfully"}, status=status.HTTP_200_OK)
-        except:
-            return Response({"message": "Delete Feed Failed"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 """

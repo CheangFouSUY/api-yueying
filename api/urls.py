@@ -72,9 +72,6 @@ urlpatterns = [
     path('group/admin/<uuid:groupId>', GroupAdminRequestView.as_view(), name="group_admin_apply"),
         # PUT : set group admin
     path('group/setRole/<uuid:groupId>/<uuid:userId>/<int:role>',SetRoleView.as_view(),name="group_set_role"),
-
-        # DELETE : Delete group feed
-    path('group/delFeed/<uuid:groupId>/<uuid:feedId>',GroupFeedDeleteView.as_view(),name="group_feed_delete"),
         # PUT : Ban Member
     path('group/banMember/<uuid:groupId>/<uuid:userId>',GroupMemberBanView.as_view(),name="group_member_ban"),
         # GET : Show group user had joined
