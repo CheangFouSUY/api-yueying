@@ -52,18 +52,21 @@ class GroupDetailView(generics.GenericAPIView):
     # Update Group By Id
     @swagger_auto_schema(operation_summary="Update Group By Id")
     def put(self, request, groupId):
-        admin = UserGroup.objects.get(group=groupId, user=request.user)
-
-        if admin.isAdmin or admin.isMainAdmin:
-            group = get_object_or_404(Group, pk=groupId)
-            serializer = self.get_serializer(instance=group, data=request.data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save(updatedAt=timezone.now())
-            data = serializer.data
-            data['message'] = "Update Group Successfully"
-            return Response(data, status=status.HTTP_200_OK)
-        else:
-            return Response({"message": "Not Group Admin"},  status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            member = UserGroup.objects.get(group=groupId, user=request.user)
+            if member.isAdmin or member.isMainAdmin:
+                group = get_object_or_404(Group, pk=groupId)
+                serializer = self.get_serializer(instance=group, data=request.data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save(updatedAt=timezone.now())
+                data = serializer.data
+                data['message'] = "Update Group Successfully"
+                return Response(data, status=status.HTTP_200_OK)
+            else:
+                return Response({"message": "Not Group Admin"},  status=status.HTTP_401_UNAUTHORIZED)
+                
+        except:
+            return Response({"message": "Update Group Failed,Not Group Member"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Delete Group By Id
     @swagger_auto_schema(operation_summary="Delete Group By Id")
