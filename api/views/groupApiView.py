@@ -191,7 +191,7 @@ class GroupAdminRequestView(generics.CreateAPIView):
     @swagger_auto_schema(operation_summary="Request For Group Admin Role")
     def post(self,request,groupId):
         user = request.user
-        isMember = UserGroup.objects.get(group=groupId, user=user, isAdmin=False)
+        isMember = UserGroup.objects.get(group=groupId, user=user, isAdmin=False,isMainAdmin=False)
         if isMember:
             if isMember.isBanned and not isMember.isMainAdmin:
                 if isMember.banDue > timezone.now():
