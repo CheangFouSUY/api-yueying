@@ -52,9 +52,9 @@ class GroupDetailView(generics.GenericAPIView):
     # Update Group By Id
     @swagger_auto_schema(operation_summary="Update Group By Id")
     def put(self, request, groupId):
-        admin = UserGroup.objects.filter(group=groupId, user=request.user, isAdmin=True)
+        admin = UserGroup.objects.get(group=groupId, user=request.user)
 
-        if admin:
+        if admin.isAdmin or admin.isMainAdmin:
             group = get_object_or_404(Group, pk=groupId)
             serializer = self.get_serializer(instance=group, data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -62,6 +62,8 @@ class GroupDetailView(generics.GenericAPIView):
             data = serializer.data
             data['message'] = "Update Group Successfully"
             return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "Not Group Admin"},  status=status.HTTP_401_UNAUTHORIZED)
 
     # Delete Group By Id
     @swagger_auto_schema(operation_summary="Delete Group By Id")
@@ -91,7 +93,7 @@ class GroupCreateView(generics.CreateAPIView):
 
         #add newUserGroup
         group = get_object_or_404(Group, pk=serializer.data["id"])
-        newUsergroup = UserGroup(group=group, user=request.user,isAdmin=True,isMainAdmin=True)
+        newUsergroup = UserGroup(group=group, user=request.user,isMainAdmin=True)
         newUsergroup.save()
         data = serializer.data
         data['message'] = "Create Group Successfully"
@@ -249,7 +251,7 @@ class ShowUserGroupView(generics.ListAPIView):
 GET : Show/Search Group Feed
 '''
 class GroupFeedListView(generics.ListAPIView):
-    serializer_class = ListFeedSerializer
+    serializer_class = ListGroupFeedSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     # Get All Group Feeds
@@ -285,6 +287,8 @@ class GroupFeedListView(generics.ListAPIView):
             feed.likes = likes
             feed.dislikes = dislikes
             feed.reviewers = reviewers
+            feed.response = 'O'
+            feed.isFollow = False
             if pin:
                 feed.isPin = 1
             else:
@@ -293,6 +297,17 @@ class GroupFeedListView(generics.ListAPIView):
                 feed.isFeatured = 1
             else:
                 feed.isFeatured = 0
+
+            if not self.request.user.is_anonymous:
+                userfeed = UserFeed.objects.filter(user=self.request.user,feed=feed).first()
+                if userfeed:
+                    if userfeed.response == 'L':
+                        feed.response = 'L'
+                    if userfeed.response == 'D':
+                        feed.response = 'D'
+                    if userfeed.isFollowed:
+                        feed.isFollow = True
+
 
         ordered = sorted(allFeeds, key=operator.attrgetter('isPin','isFeatured','createdAt'),reverse=True)
         return ordered
