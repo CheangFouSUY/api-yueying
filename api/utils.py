@@ -12,7 +12,6 @@ from django.core.mail import EmailMessage
 from django.utils import timezone
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from rest_framework.views import exception_handler
 
 def get_tokens(user):
     refresh = RefreshToken.for_user(user)
@@ -84,15 +83,3 @@ def get_thumbnail(f, quality, isThumbnail, ratio):
         return newImage
     except Exception as e:
         return e
-
-
-def custom_exception_handler(exc, context):
-    # Call REST framework's default exception handler first,
-    # to get the standard error response.
-    response = exception_handler(exc, context)
-
-    # Now add the HTTP status code to the response.
-    if response is not None:
-        response.data['status_code'] = response.default_code
-
-    return response
