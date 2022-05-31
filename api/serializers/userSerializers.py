@@ -1,3 +1,4 @@
+from unittest.util import _MAX_LENGTH
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
@@ -58,6 +59,8 @@ class UserActivateSerializer(serializers.ModelSerializer):
 Serializer class for Request New Password
 """
 class RequestPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    username = serializers.CharField(max_length=255)
     
     class Meta:
         model = CustomUser
@@ -94,9 +97,11 @@ class ResetPasswordSerializer(serializers.Serializer):
         user.save()
 
 class ResetPasswordByQuestionSerializer(serializers.Serializer):
+    username = serializers.CharField()
     newpassword = serializers.CharField(style={'input_type': 'password'}, write_only=True)
     newpassword2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
     securityQuestion = serializers.IntegerField()
+    securityAnswer = serializers.CharField()
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
@@ -117,7 +122,7 @@ class ResetPasswordByPasswordSerializer(serializers.Serializer):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
-
+   
     def updatePassword(self):
         password = self.validated_data['newpassword']
         user = self.user
@@ -127,14 +132,13 @@ class ResetPasswordByPasswordSerializer(serializers.Serializer):
 
 class ResetQuestionSerializer(serializers.Serializer):
     password = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+    securityQuestion = serializers.CharField()
+    securityAnswer = serializers.CharField()
 
     class Meta:
         model = CustomUser
         fields = ['securityQuestion','securityAnswer']
-    
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user')
-        super().__init__(*args, **kwargs)
+
 
 """
 Serializer class for login

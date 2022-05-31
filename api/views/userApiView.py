@@ -17,7 +17,7 @@ import re
 
 
 def UserValidation(email,username,password,password2,mode):
-    
+    string = "~!@#$%^&*()_+-*/<>,.[]\/"
     if mode == 0:
         if CustomUser.objects.filter(email=email).exists():
             return 1001
@@ -31,12 +31,13 @@ def UserValidation(email,username,password,password2,mode):
     if len(password) < 8:
         return 1004
 
-    if password.isalnum():
-        test = re.search(r"\W",password)
-        if test is None:
-            return 1004
-        else:
-            return 200
+    testSym = re.search(r"\W",password)
+    testNum = re.search(r'\d',password)
+    my_re = re.compile(r'[A-Za-z]',re.S)
+    testAl = re.findall(my_re,password)
+
+    if testSym and testNum and testAl:
+        return 200
     else:
         return 1004
 
@@ -191,6 +192,7 @@ class ResetPasswordbyOldpasswordView(generics.GenericAPIView):
                     return Response({"message": "Password too simple.","code":code}, status=status.HTTP_400_BAD_REQUEST)
 
                 serializer = self.get_serializer(data=request.data, user=self.request.user)
+                serializer.is_valid()
                 serializer.updatePassword()
                     # When update success, should terminate the token, so it cannot be used again
                 return Response({"message": "Password Reset Successfully"}, status=status.HTTP_200_OK)
@@ -209,7 +211,6 @@ class ResetPasswordbyQuestionView(generics.GenericAPIView):
             questionNo = int(request.data['securityQuestion'])
             answer = request.data['securityAnswer'].lower()
             answer = make_password(answer,"a","pbkdf2_sha1")
-            user = CustomUser.objects.get(username=username)
             user = get_object_or_404(CustomUser, username=username)
 
             correctAns = user.securityAnswer
@@ -227,6 +228,7 @@ class ResetPasswordbyQuestionView(generics.GenericAPIView):
                         return Response({"message": "Password too simple.","code":code}, status=status.HTTP_400_BAD_REQUEST)
 
                     serializer = self.get_serializer(data=request.data, user=user)
+                    serializer.is_valid()
                     serializer.updatePassword()
                         # When update success, should terminate the token, so it cannot be used again
                     return Response({"message": "Password Reset Successfully"}, status=status.HTTP_200_OK)
