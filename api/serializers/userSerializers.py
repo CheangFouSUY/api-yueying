@@ -90,7 +90,8 @@ class ResetPasswordSerializer(serializers.Serializer):
         password = self.validated_data['password']
         user = self.user
         user.set_password(password)
-        user.save(updatedAt=timezone.now())
+        user.updatedAt = timezone.now()
+        user.save()
 
 class ResetPasswordByQuestionSerializer(serializers.Serializer):
     newpassword = serializers.CharField(style={'input_type': 'password'}, write_only=True)

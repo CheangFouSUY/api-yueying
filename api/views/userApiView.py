@@ -151,6 +151,24 @@ class ResetPasswordTokenValidateView(generics.GenericAPIView):
 """
 PUT: Reset Password (for authenticated user only)
 """
+class ResetPasswordEmailView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ResetPasswordSerializer
+
+    def put(self, request):
+        # try:
+        serializer = self.get_serializer(data=request.data, user=request.user)
+        if serializer.is_valid(raise_exception=True):
+            serializer.updatePassword()
+            # When update success, should terminate the token, so it cannot be used again
+            # user = self.request.user
+            # user = authenticate(username=user.username, password=request.data.get('password', ''))
+            # token = get_tokens(user)
+
+            return Response({"message": "Password Reset Successfully"}, status=status.HTTP_200_OK)
+        # except:
+        #     return Response({"message": "Password Reset Failed"}, status=status.HTTP_400_BAD_REQUEST)
+
 class ResetPasswordbyOldpasswordView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ResetPasswordByPasswordSerializer
