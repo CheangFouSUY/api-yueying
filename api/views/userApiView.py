@@ -143,7 +143,8 @@ class ResetPasswordTokenValidateView(generics.GenericAPIView):
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms='HS256')
             user = CustomUser.objects.get(id=payload['user_id'])
             authToken = get_tokens(user)
-            return Response(authToken, status=status.HTTP_200_OK)
+            # return Response(authToken, status=status.HTTP_200_OK)
+            return Response({"tokens": authToken, "message": "Reset Link is Valid"}, status=status.HTTP_200_OK)
         except jwt.ExpiredSignatureError:
             return Response({"message": "Reset Link Expire"}, status=status.HTTP_400_BAD_REQUEST)
         except jwt.exceptions.DecodeError:
@@ -200,6 +201,22 @@ class ResetPasswordbyOldpasswordView(generics.GenericAPIView):
                 return Response({"message": "Old Password Is Incorrect"}, status=status.HTTP_400_BAD_REQUEST)
         except:
             return Response({"message": "Password Reset Failed"}, status=status.HTTP_400_BAD_REQUEST)
+
+class RequestQuestionView(generics.CreateAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = RequestQuestionSerializer
+
+    def get(self, request):
+        username = request.data['username']
+        user = CustomUser.objects.filter(username=username)
+        if user.exists():
+            user = user[0]
+            data = {}
+            data['securityQuestion'] = user.securityQuestion
+            data["message"] = "Get Question Successfully"
+            return Response(data, status=status.HTTP_200_OK)
+        return Response ({"message": "User not existed"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ResetPasswordbyQuestionView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
