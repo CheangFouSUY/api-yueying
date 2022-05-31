@@ -75,7 +75,7 @@ class UserRegisterView(generics.GenericAPIView):
             newUser = CustomUser.objects.get(email=serializer.data['email'])
             newToken = get_tokens(newUser)['access']
 
-            send_smtp(newUser, request, newToken, "Activate Account", "register_email.txt" )
+            send_smtp(newUser, request, newToken, "Activate Account", "register_email.txt", True)
             data = serializer.data
             data['message'] = "Register Account Successfully"
             return Response(data, status=status.HTTP_201_CREATED)
@@ -124,7 +124,7 @@ class RequestPasswordView(generics.GenericAPIView):
                 if not user.username == username: # incase the username is not the same as email
                     return Response({"message": "Invalid Username or Email"}, status=status.HTTP_400_BAD_REQUEST)
                 newToken = get_tokens(user)['access']
-                send_smtp(user, request, newToken, "Reset Password for YueYing", "reset_email.txt")
+                send_smtp(user, request, newToken, "Reset Password for YueYing", "reset_email.txt", False)
                 return Response({"message": "Please check your email for futher info."}, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Failed to Request Password"}, status=status.HTTP_400_BAD_REQUEST)
@@ -202,12 +202,13 @@ class ResetPasswordbyOldpasswordView(generics.GenericAPIView):
         except:
             return Response({"message": "Password Reset Failed"}, status=status.HTTP_400_BAD_REQUEST)
 
-class RequestQuestionView(generics.CreateAPIView):
+class RequestQuestionView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = RequestQuestionSerializer
 
+    @swagger_auto_schema(operation_summary="Request For Security Question By Username")
     def get(self, request):
-        username = request.data['username']
+        username = request.GET.get('username')
         user = CustomUser.objects.filter(username=username)
         if user.exists():
             user = user[0]
@@ -235,8 +236,8 @@ class ResetPasswordbyQuestionView(generics.GenericAPIView):
 
             if questionNo == correctNo:
                 if correctAns == answer:
-                    newpassword = request.data['newpassword']
-                    newpassword2 = request.data['newpassword2']
+                    newpassword = request.data['password']
+                    newpassword2 = request.data['password2']
                     code = UserValidation(None,None,newpassword,newpassword2,1)
                     
                     if code == 1003:
@@ -407,7 +408,7 @@ class UserCreateView(generics.CreateAPIView):
             newUser = CustomUser.objects.get(email=serializer.data['email'])
             newToken = get_tokens(newUser)['access']
 
-            send_smtp(newUser, request, newToken, "Activate Account", "register_email.txt" )
+            send_smtp(newUser, request, newToken, "Activate Account", "register_email.txt", True)
             
             data = serializer.data
             data['message'] = "Create User Successfully"
