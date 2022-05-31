@@ -34,7 +34,9 @@ class SetRoleView(generics.GenericAPIView):
                 if role == 1:
                     if userAdmin.isMainAdmin:
                         targetUser.isMainAdmin = True
+                        targetUser.isAdmin = False
                         userAdmin.isMainAdmin = False
+                        userAdmin.isAdmin = True
                         targetUser.save()
                         userAdmin.save()
                         return Response({"message": "Set Main Admin Successfully."}, status=status.HTTP_200_OK)
