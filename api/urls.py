@@ -33,6 +33,7 @@ urlpatterns = [
     path('auth/request-validate/', ResetPasswordTokenValidateView.as_view(), name="reset_password_validate"),
     path('auth/resetpwd/email/', ResetPasswordEmailView.as_view(), name="reset_password_email"),
     path('auth/resetpwd/old/', ResetPasswordbyOldpasswordView.as_view(), name="reset_password_oldpswd"),
+    path('auth/requestquestion/', RequestQuestionView.as_view(), name="request_securityQuestion"),
     path('auth/resetpwd/question/', ResetPasswordbyQuestionView.as_view(), name="reset_password_secureQ"),
     path('auth/resetquestion/', ResetSecurityQuestionView.as_view(), name="reset_secureQ"),
     path('auth/login/', LoginView.as_view(), name="login"),

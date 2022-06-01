@@ -21,13 +21,14 @@ def get_tokens(user):
         'access': str(refresh.access_token),
     }
 
-def send_smtp(user, request, token, subject, fileName):
+def send_smtp(user, request, token, subject, fileName, isActivate):
+    domain = settings.BACKEND_URL if isActivate else settings.FRONTEND_URL
     context = {
         'request': request,
         'protocol': request.scheme,
 
         # 
-        'domain': settings.BACKEND_URL,
+        'domain': domain,
         'username': user.username,
         'token': str(token),
         'email': user.email

@@ -96,6 +96,11 @@ class ResetPasswordSerializer(serializers.Serializer):
         user.updatedAt = timezone.now()
         user.save()
 
+class RequestQuestionSerializer(serializers.Serializer):
+    class Meta:
+        model = CustomUser
+        fields = ['securityQuestion']
+
 class ResetPasswordByQuestionSerializer(serializers.Serializer):
     username = serializers.CharField()
     newpassword = serializers.CharField(style={'input_type': 'password'}, write_only=True)
