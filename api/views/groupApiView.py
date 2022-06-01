@@ -284,8 +284,7 @@ class GroupFeedListView(generics.ListAPIView):
 
         allFeeds = Feed.objects.filter(filter)
         for feed in allFeeds:
-            pin = GroupFeed.objects.filter(feed=feed,isPin=True)
-            featured = GroupFeed.objects.filter(feed=feed,isFeatured=True)
+            feedType = GroupFeed.objects.filter(feed=feed).first()
             allUserFeeds = UserFeed.objects.filter(feed=feed)
             reviewers = Review.objects.filter(feed=feed).count()
             likes = allUserFeeds.filter(response='L').count()
@@ -295,11 +294,11 @@ class GroupFeedListView(generics.ListAPIView):
             feed.reviewers = reviewers
             feed.response = 'O'
             feed.isFollow = False
-            if pin:
+            if feedType.isPin:
                 feed.isPin = 1
             else:
                 feed.isPin = 0
-            if featured:
+            if feedType.isFeatured:
                 feed.isFeatured = 1
             else:
                 feed.isFeatured = 0
@@ -313,9 +312,8 @@ class GroupFeedListView(generics.ListAPIView):
                         feed.response = 'D'
                     if userfeed.isFollowed:
                         feed.isFollow = True
-
-
-        ordered = sorted(allFeeds, key=operator.attrgetter('isPin','isFeatured','createdAt'),reverse=True)
+                    
+        ordered = sorted(allFeeds, key=operator.attrgetter('isPin','createdAt'),reverse=True)
         return ordered
 
 ################################ Query ######################################

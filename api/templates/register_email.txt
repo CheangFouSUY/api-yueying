@@ -2,7 +2,7 @@ Hi {{ username }}!
 
 To activate for YueYing Website, please visit:
 
-{{ protocol }}://{{ domain }}/api/v1/auth/activate?token={{ token }}
+{{ protocol }}://{{ domain }}/activatesuccess?token={{ token }}
 
 
 
@@ -10,5 +10,5 @@ To activate for YueYing Website, please visit:
 
 为了激活阅影的账户，请访问下面的链接：
 
-{{ protocol }}://{{ domain }}/api/v1/auth/activate?token={{ token }}
+{{ protocol }}://{{ domain }}/activatesuccess?token={{ token }}
 

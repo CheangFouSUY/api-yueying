@@ -93,13 +93,16 @@ class ReviewCreateView(generics.CreateAPIView):
     @swagger_auto_schema(operation_summary="Create Review")
     def post(self, request):
         feed = request.data.get('feed', '') or None
-        feed = get_object_or_404(Feed, pk=feed)
+        feed = Feed.objects.filter(pk=feed)
         if feed:
             if not feed.isPublic:
                 group = feed.belongTo
                 groupMember = UserGroup.objects.filter(group=group,user=request.user).first()
-                if not groupMember or groupMember.banDue > timezone.now():
-                    return Response({"message": "Not group member/Banned Member,Unauthorized to review group feed"}, status=status.HTTP_401_UNAUTHORIZED)
+                if not groupMember:
+                    return Response({"message": "Not group member,Unauthorized to react group feed"}, status=status.HTTP_401_UNAUTHORIZED)
+                elif groupMember.isBanned:
+                    if groupMember.banDue > timezone.now():
+                        return Response({"message": "Banned Member,Unauthorized to react group feed"}, status=status.HTTP_401_UNAUTHORIZED)
                 elif groupMember.banDue < timezone.now():
                     groupMember.isBanned=False
                     groupMember.save()

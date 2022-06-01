@@ -47,6 +47,9 @@ class UserFeed(models.Model):
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
 
+    class Meta:
+        unique_together = ('feed','user')
+
 #Review like/dislike by user
 class UserReview(models.Model):
     CHOICE=(
@@ -59,6 +62,9 @@ class UserReview(models.Model):
     response = models.CharField(choices=CHOICE, max_length=10, null=False, blank=False,default='O')
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = ('review','user')
 
 #Group joined by user
 class UserGroup(models.Model):
