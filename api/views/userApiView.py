@@ -126,6 +126,8 @@ class RequestPasswordView(generics.GenericAPIView):
                 newToken = get_tokens(user)['access']
                 send_smtp(user, request, newToken, "Reset Password for YueYing", "reset_email.txt")
                 return Response({"message": "Please check your email for futher info."}, status=status.HTTP_200_OK)
+            else:
+                return Response({"message": "User not exists."}, status=status.HTTP_400_BAD_REQUEST)
         except:
             return Response({"message": "Failed to Request Password"}, status=status.HTTP_400_BAD_REQUEST)
 
