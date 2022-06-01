@@ -368,7 +368,7 @@ class GroupMemberView(generics.ListAPIView):
 
         allBannedMember = UserGroup.objects.filter(group=group, isBanned=True)
         for member in allBannedMember:
-            if member.banDue < timezone.now():
+            if member.isBanned and member.banDue < timezone.now():
                 member.isBanned=False
                 member.save()
 
