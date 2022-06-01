@@ -194,11 +194,14 @@ class ReviewReactionView(generics.GenericAPIView):
             if not feed.isPublic:
                 group = feed.belongTo
                 groupMember = UserGroup.objects.filter(group=group,user=request.user).first()
-                if not groupMember or groupMember.banDue > timezone.now():
-                    return Response({"message": "Not group member/Banned Member,Unauthorized to react group feed's review"}, status=status.HTTP_401_UNAUTHORIZED)
-                elif groupMember.banDue < timezone.now():
-                    groupMember.isBanned=False
-                    groupMember.save()
+                if not groupMember:
+                    return Response({"message": "Not group member,Unauthorized to react group feed's review"}, status=status.HTTP_401_UNAUTHORIZED)
+                elif groupMember.banDue:
+                    if groupMember.banDue > timezone.now():
+                        return Response({"message": "Banned Member,Unauthorized to react group feed's review"}, status=status.HTTP_401_UNAUTHORIZED)
+                    elif groupMember.banDue < timezone.now():
+                        groupMember.isBanned=False
+                        groupMember.save()
         try:
             tmpUserReview = UserReview.objects.get(review=reviewId, user=request.user)  # get one
         except UserReview.DoesNotExist:
