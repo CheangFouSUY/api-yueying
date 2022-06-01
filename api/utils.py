@@ -22,7 +22,8 @@ def get_tokens(user):
     }
 
 def send_smtp(user, request, token, subject, fileName, isActivate):
-    domain = settings.BACKEND_URL if isActivate else settings.FRONTEND_URL
+    #domain = settings.BACKEND_URL if isActivate else settings.FRONTEND_URL
+    domain = settings.FRONTEND_URL
     context = {
         'request': request,
         'protocol': request.scheme,
