@@ -307,13 +307,13 @@ class LoginView(generics.GenericAPIView):
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
 
-        thumbnail_url = generate_presigned_url(str(user.thumbnail)) if user.thumbnail else None
+        thumbnail_url = str(generate_presigned_url(str(user.thumbnail))) if user.thumbnail else None
         
         data = serializer.data
         data['id'] = user.id
         data['firstName'] = user.firstName or None
         data['lastName'] = user.lastName or None
-        data['thumbnail'] = str(thumbnail_url) or None
+        data['thumbnail'] = thumbnail_url
         data['gender'] = user.gender or None
         data['is_staff'] = user.is_staff
         data['dob'] = user.dob or None
