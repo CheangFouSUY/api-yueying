@@ -51,8 +51,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = models.CharField(max_length=150, unique=True)
-    firstName = models.CharField(max_length=150)
-    lastName = models.CharField(max_length=150)
+    firstName = models.CharField(max_length=150,blank=True)
+    lastName = models.CharField(max_length=150,blank=True)
     email = models.EmailField(_('email address'), unique=True)
     about = models.TextField(_('about'), max_length=500, default = "A bio hasn't been added yet.")
     is_staff = models.BooleanField(default=False)

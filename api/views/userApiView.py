@@ -238,8 +238,8 @@ class ResetPasswordbyQuestionView(generics.GenericAPIView):
 
             if questionNo == correctNo:
                 if correctAns == answer:
-                    newpassword = request.data['password']
-                    newpassword2 = request.data['password2']
+                    newpassword = request.data['newpassword']
+                    newpassword2 = request.data['newpassword2']
                     code = UserValidation(None,None,newpassword,newpassword2,1)
                     
                     if code == 1003:
