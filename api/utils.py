@@ -77,7 +77,8 @@ def get_thumbnail(f, quality, isThumbnail, ratio):
         image = image.resize((finalWidth, finalHeight))
 
         # after modifications, save it to the thumbnail
-        image.save(thumbnail, format='JPEG', quality=quality)
+        # image.save(thumbnail, format='JPEG', quality=quality)
+        image.save(thumbnail, format='PNG', quality=quality)
         thumbnail.seek(0)
 
         newImage = InMemoryUploadedFile(thumbnail, 'ImageField', "%s.jpg" % name, 'image/jpeg',
