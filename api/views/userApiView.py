@@ -312,7 +312,7 @@ class LoginView(generics.GenericAPIView):
         data['id'] = user.id
         data['firstName'] = user.firstName or None
         data['lastName'] = user.lastName or None
-        data['thumbnail'] = user.thumbnail or None
+        data['thumbnail'] = str(user.thumbnail) or None
         data['gender'] = user.gender or None
         data['is_staff'] = user.is_staff
         data['dob'] = user.dob or None
