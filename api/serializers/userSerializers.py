@@ -113,7 +113,7 @@ class ResetPasswordByQuestionSerializer(serializers.Serializer):
         super().__init__(*args, **kwargs)
 
     def updatePassword(self):
-        password = self.validated_data['password']
+        password = self.validated_data['newpassword']
         user = self.user
         user.set_password(password)
         user.updatedAt = timezone.now()
