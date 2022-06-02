@@ -65,7 +65,7 @@ class ListFeedSerializer(serializers.ModelSerializer):
     response = serializers.CharField()
     class Meta:
         model = Feed
-        fields = ['id', 'title', 'createdBy', 'likes', 'dislikes', 'reviewers','createdAt','isFollow','response']
+        fields = ['id', 'title', 'description','createdBy', 'likes', 'dislikes', 'reviewers','createdAt','isFollow','response']
 
 
 class ListGroupFeedSerializer(serializers.ModelSerializer):
@@ -78,4 +78,4 @@ class ListGroupFeedSerializer(serializers.ModelSerializer):
     response = serializers.CharField()
     class Meta:
         model = Feed
-        fields = ['id', 'title', 'createdBy', 'likes', 'dislikes', 'reviewers','createdAt','isPin','isFeatured','isFollow','response']
+        fields = ['id', 'title','description','createdBy', 'likes', 'dislikes', 'reviewers','createdAt','isPin','isFeatured','isFollow','response']
