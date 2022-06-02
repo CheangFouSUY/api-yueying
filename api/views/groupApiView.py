@@ -266,6 +266,7 @@ class GroupFeedListView(generics.ListAPIView):
         group = self.kwargs['groupId']
         category = self.request.GET.get('category')
         search = self.request.GET.get('search')
+        searchName = self.request.GET.get('searchName')
 
         filter = Q()
         filter &= Q(isPublic=False, belongTo=group, groupfeed__group=group)
@@ -274,6 +275,11 @@ class GroupFeedListView(generics.ListAPIView):
             searchTerms = search.split(' ')
             for term in searchTerms:
                 filter &= Q(title__icontains=term) | Q(description__icontains=term) | Q(createdBy__username__icontains=term)
+        
+        if searchName is not None:
+            searchTerms = searchName.split(' ')
+            for term in searchTerms:
+                filter &= Q(title__icontains=term)
         
         if category == 'p':
             filter &= Q(groupfeed__isPin=True)
@@ -329,6 +335,7 @@ class GroupListView(generics.ListAPIView):
     def get_queryset(self):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
+        searchName = self.request.GET.get('searchName')
         category = self.request.GET.get('category')
 
         filter = Q()
@@ -336,6 +343,11 @@ class GroupListView(generics.ListAPIView):
             searchTerms = search.split(' ')
             for term in searchTerms:
                 filter |= Q(groupName__icontains=term) | Q(description__icontains=term) | Q(createdBy__username__icontains=term)
+
+        if searchName is not None:
+            searchTerms = searchName.split(' ')
+            for term in searchTerms:
+                filter &= Q(groupName__icontains=term)
 
         if category is not None:
             filter &= Q(category=category)

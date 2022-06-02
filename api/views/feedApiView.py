@@ -128,6 +128,7 @@ class FeedListView(generics.ListAPIView):
     def get_queryset(self):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
+        searchName = self.request.GET.get('searchName')
         group = self.request.GET.get('belongTo')
         isPublic = self.request.GET.get('isPublic')
         followedBy = self.request.GET.get('followedBy')  # followedBy = userId
@@ -143,6 +144,11 @@ class FeedListView(generics.ListAPIView):
             searchTerms = search.split(' ')
             for term in searchTerms:
                 filter &= Q(title__icontains=term) | Q(description__icontains=term) | Q(createdBy__username__icontains=term)
+
+        if searchName is not None:
+            searchTerms = searchName.split(' ')
+            for term in searchTerms:
+                filter &= Q(title__icontains=term)
 
         if group is not None:
             filter &= Q(belongTo=group)

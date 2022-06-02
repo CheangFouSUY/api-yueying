@@ -127,6 +127,7 @@ class BookListView(generics.ListAPIView):
     def get_queryset(self):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
+        searchName = self.request.GET.get('searchName')
         category = self.request.GET.get('category')
         savedBy = self.request.GET.get('savedBy')  #savedBy = userId
 
@@ -135,6 +136,12 @@ class BookListView(generics.ListAPIView):
             searchTerms = search.split(' ')
             for term in searchTerms:
                 filter &= Q(isbn__icontains=term) | Q(title__icontains=term) | Q(author__icontains=term) | Q(publisher__icontains=term)
+        
+        if searchName is not None:
+            searchTerms = searchName.split(' ')
+            for term in searchTerms:
+                filter &= Q(title__icontains=term)
+        
         if category is not None:
             filter &= Q(category=category)
 

@@ -127,6 +127,7 @@ class MovieListView(generics.ListAPIView):
     def get_queryset(self):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
+        searchName = self.request.GET.get('searchName')
         category = self.request.GET.get('category')
         savedBy = self.request.GET.get('savedBy')  #savedBy = userId
         area = self.request.GET.get('area') 
@@ -136,6 +137,13 @@ class MovieListView(generics.ListAPIView):
             searchTerms = search.split(' ')
             for term in searchTerms:
                 filter &= Q(title__icontains=term) | Q(director__icontains=term) | Q(actor__icontains=term)
+        
+        if searchName is not None:
+            searchTerms = searchName.split(' ')
+            for term in searchTerms:
+                filter &= Q(title__icontains=term)
+        
+        
         if category is not None:
             filter &= Q(category=category)
 
