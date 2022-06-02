@@ -9,7 +9,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 import jwt
 from ..serializers.userSerializers import *
-from ..utils import get_tokens, send_smtp
+from ..utils import *
 from ..models.users import CustomUser
 from ..models.userRelations import *
 import re
@@ -307,12 +307,13 @@ class LoginView(generics.GenericAPIView):
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
 
-
+        thumbnail_url = generate_presigned_url(str(user.thumbnail)) if user.thumbnail else None
+        
         data = serializer.data
         data['id'] = user.id
         data['firstName'] = user.firstName or None
         data['lastName'] = user.lastName or None
-        data['thumbnail'] = str(user.thumbnail) or None
+        data['thumbnail'] = str(thumbnail_url) or None
         data['gender'] = user.gender or None
         data['is_staff'] = user.is_staff
         data['dob'] = user.dob or None

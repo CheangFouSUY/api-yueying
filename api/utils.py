@@ -12,6 +12,11 @@ from django.core.mail import EmailMessage
 from django.utils import timezone
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
+import boto3
+from botocore.exceptions import ClientError
+from botocore.config import Config
+import requests
+
 
 def get_tokens(user):
     refresh = RefreshToken.for_user(user)
@@ -86,3 +91,17 @@ def get_thumbnail(f, quality, isThumbnail, ratio):
         return newImage
     except Exception as e:
         return e
+
+
+def generate_presigned_url(object_key, expiry=3600):
+
+    client = boto3.client("s3",region_name=settings.AWS_S3_REGION_NAME,
+                          aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                          aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
+    try:
+        response = client.generate_presigned_url('get_object',
+                                                  Params={'Bucket': settings.AWS_STORAGE_BUCKET_NAME,'Key': object_key},
+                                                  ExpiresIn=expiry)
+        return(response)
+    except ClientError as e:
+        return(e)
