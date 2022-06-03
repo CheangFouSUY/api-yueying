@@ -6,3 +6,5 @@ from .reports import Report
 from .feedbacks import Feedback
 from .userRelations import *
 from .groupRelations import *
+from .tags import *
+from .tagRelations import *
