@@ -77,14 +77,28 @@ class FeedDetailView(generics.GenericAPIView):
     @swagger_auto_schema(operation_summary="Delete Feed By Id")
     def delete(self, request, feedId):
             feed = get_object_or_404(Feed, pk=feedId)
-            if not feed.isPublic:
-                group = get_object_or_404(Group, pk=feed.belongTo.id)
+            if request.user == feed.createdBy or request.user.is_staff:
+                feed.delete()
+                return Response({"message": "Delete Feed Successfully"}, status=status.HTTP_200_OK)
 
-            admin = UserGroup.objects.filter(user=request.user,group=group.id).first()
-            if not request.user.is_staff and request.user != feed.createdBy and not admin.isAdmin and not admin.isMainAdmin:
-                return Response({"message": "Unauthorized for delete feed"}, status=status.HTTP_401_UNAUTHORIZED)
-            feed.delete()
-            return Response({"message": "Delete Feed Successfully"}, status=status.HTTP_200_OK)
+            if not feed.isPublic:
+                group = feed.belongTo
+                admin = UserGroup.objects.filter(user=request.user,group=group.id).first()
+                if admin:
+                    if not admin.isAdmin and not admin.isMainAdmin:
+                        print("not admin and not main admin")
+                        return Response({"message": "Unauthorized for delete feed"}, status=status.HTTP_401_UNAUTHORIZED)
+                    if admin.isBanned and admin.banDue and admin.banDue > timezone.now():
+                        return Response({"message": "Unauthorized for delete feed"}, status=status.HTTP_401_UNAUTHORIZED)
+                    if admin.isBanned and admin.banDue and admin.banDue < timezone.now():
+                        admin.isBanned=False
+                        admin.save()
+                        feed.delete()
+                        return Response({"message": "Delete Feed Successfully"}, status=status.HTTP_200_OK)
+                else:
+                    return Response({"message": "Unauthorized for delete feed"}, status=status.HTTP_401_UNAUTHORIZED)
+
+           
 
 
 
@@ -208,7 +222,7 @@ class FeedReactionView(generics.GenericAPIView):
     @swagger_auto_schema(operation_summary="React On Feed, ie. Likes, Dislikes")
     def put(self, request, feedId):
         feed = get_object_or_404(Feed, pk=feedId)
-        if not feed.isPublic:
+        if not feed.isPublic and request.user != feed.createdBy:
             group = feed.belongTo
             groupMember = UserGroup.objects.filter(group=group, user=request.user).first()
             if not groupMember:
