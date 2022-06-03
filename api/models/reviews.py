@@ -5,7 +5,7 @@ from ..utils import get_thumbnail
 
 class Review(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    title = models.CharField(max_length=150)
+    title = models.CharField(max_length=150,blank=True)
     description = models.TextField(max_length=5000)
     img = models.ImageField(upload_to="uploads/reviews", blank=True)
     isDeleted = models.BooleanField(default=False)
