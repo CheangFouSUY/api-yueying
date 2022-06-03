@@ -222,7 +222,7 @@ class FeedReactionView(generics.GenericAPIView):
     @swagger_auto_schema(operation_summary="React On Feed, ie. Likes, Dislikes")
     def put(self, request, feedId):
         feed = get_object_or_404(Feed, pk=feedId)
-        if not feed.isPublic and request.user != feed.createdBy:
+        if not feed.isPublic:
             group = feed.belongTo
             groupMember = UserGroup.objects.filter(group=group, user=request.user).first()
             if not groupMember:
