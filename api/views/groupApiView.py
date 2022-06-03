@@ -37,7 +37,7 @@ class GroupDetailView(generics.GenericAPIView):
     def get(self, request, groupId):
         try:
             group = get_object_or_404(Group, pk=groupId)
-            members = UserGroup.objects.filter(group=groupId).count()
+            members = UserGroup.objects.filter(group=groupId,isBanned=False).count()
             group.members = members
             owner = CustomUser.objects.filter(pk=group.createdBy.id).first()
             group.owner = owner.username
@@ -228,7 +228,7 @@ class GroupbyCategoryView(generics.ListAPIView):
         type = self.kwargs['category']
         allGroups = Group.objects.filter(category=type)
         for group in allGroups:
-            members = UserGroup.objects.filter(group=group).count()
+            members = UserGroup.objects.filter(group=group,isBanned=False).count()
             group.members = members
         ordered = sorted(allGroups, key=operator.attrgetter('members'), reverse=True)
         return ordered
@@ -246,7 +246,7 @@ class ShowUserGroupView(generics.ListAPIView):
         for group in allGroups:
             owner = CustomUser.objects.filter(pk=group.createdBy.id).first()
             group.owner = owner.username
-            members = UserGroup.objects.filter(group=group).count()
+            members = UserGroup.objects.filter(group=group,isBanned=False).count()
             group.members = members
         ordered = sorted(allGroups, key=operator.attrgetter('members'), reverse=True)
         return ordered
@@ -356,7 +356,7 @@ class GroupListView(generics.ListAPIView):
         for group in allGroups:
             owner = CustomUser.objects.filter(pk=group.createdBy.id).first()
             group.owner = owner.username
-            members = UserGroup.objects.filter(group=group).count()
+            members = UserGroup.objects.filter(group=group,isBanned=False).count()
             group.members = members
         ordered = sorted(allGroups, key=operator.attrgetter('members'), reverse=True)
         return ordered
