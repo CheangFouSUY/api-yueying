@@ -194,7 +194,7 @@ class GroupAdminRequestView(generics.CreateAPIView):
     @swagger_auto_schema(operation_summary="Request For Group Admin Role")
     def post(self,request,groupId):
         user = request.user
-        isMember = UserGroup.objects.get(group=groupId, user=user, isAdmin=False,isMainAdmin=False)
+        isMember = UserGroup.objects.filter(group=groupId, user=user, isAdmin=False,isMainAdmin=False).first()
         if isMember:
             if isMember.isBanned and not isMember.isMainAdmin:
                 if isMember.banDue > timezone.now():
@@ -458,5 +458,12 @@ class ShowRequestUserView(generics.ListAPIView):
     @swagger_auto_schema(operation_summary="Get User With Pending Admin Request")
     def get_queryset(self):
         group = self.kwargs['groupId']
-        allUser = CustomUser.objects.filter(groupadminrequest__result=0,groupadminrequest__group=group)
+        allBannedMember = UserGroup.objects.filter(group=group, isBanned=True)
+        for member in allBannedMember:
+            if member.isBanned and member.banDue < timezone.now():
+                member.isBanned=False
+                member.save()
+
+        allUser = CustomUser.objects.filter(usergroup__group=group,usergroup__isBanned=False,groupadminrequest__result=0,groupadminrequest__group=group)
+
         return allUser

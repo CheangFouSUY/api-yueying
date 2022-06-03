@@ -44,9 +44,13 @@ class SetRoleView(generics.GenericAPIView):
                         return Response({"message": "Not Main Admin."}, status=status.HTTP_401_UNAUTHORIZED)
                 
                 if role == 2:
-                    targetUser.isAdmin = True
-                    request = GroupAdminRequest.objects.filter(group=groupId,user=targetUser.id).first()
+                    if not targetUser.isMainAdmin:
+                        targetUser.isAdmin = True
+                    else:
+                        return Response({"message": "Target is Main Admin."}, status=status.HTTP_200_OK)
                     targetUser.save()
+                    user = get_object_or_404(CustomUser, pk=userId)
+                    request = GroupAdminRequest.objects.filter(group=groupId,user=user).first()
                     if request:
                         request.result = 1
                         request.save()
@@ -58,6 +62,12 @@ class SetRoleView(generics.GenericAPIView):
                     targetUser.isAdmin = False
                     targetUser.isMainAdmin = False
                     targetUser.save()
+                    user = get_object_or_404(CustomUser, pk=userId)
+                    request = GroupAdminRequest.objects.filter(group=groupId,user=user).first()
+                    if request:
+                        request.result = 2
+                        request.save()
+
                     return Response({"message": "Set Normal Member Successfully."}, status=status.HTTP_200_OK)
         else:
             return Response({"message": "Not Group Admin."}, status=status.HTTP_401_UNAUTHORIZED)
