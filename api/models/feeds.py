@@ -9,7 +9,6 @@ class Feed(models.Model):
     description = models.TextField(max_length=5000)
     img = models.ImageField(upload_to="uploads/feeds", blank=True)
     isPublic = models.BooleanField(default=True)
-    isTag = models.BooleanField(default=True)
     isDeleted = models.BooleanField(default=False)
     createdBy = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
     belongTo= models.ForeignKey("Group", on_delete=models.CASCADE, null=True, blank=True)
