@@ -10,7 +10,7 @@ Serializer class for Feed Detail
 class FeedDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feed
-        fields = ['id', 'title', 'description', 'img', 'isPublic', 'isDeleted', 'createdBy', 'belongTo', 'createdAt', 'updatedAt']
+        fields = ['id', 'title', 'description', 'img', 'isPublic', 'belongTag','isDeleted', 'createdBy', 'belongTo', 'createdAt', 'updatedAt']
         extra_kwargs = {
             'id': {'read_only': True},
             'isPublic': {'read_only': True},
@@ -27,11 +27,10 @@ Serializer class for Feed Profile (include rating, likes, dislikes)
 class FeedProfileSerializer(serializers.ModelSerializer):
     likes = serializers.IntegerField()
     dislikes = serializers.IntegerField()
-    isFollow = serializers.BooleanField()
     response = serializers.CharField()
     class Meta:
         model = Feed
-        fields = ['id', 'title', 'description', 'img', 'isPublic', 'isDeleted', 'createdBy', 'belongTo', 'createdAt', 'updatedAt', 'likes', 'dislikes','response','isFollow',]
+        fields = ['id', 'title', 'description', 'img', 'isPublic', 'belongTag','isDeleted', 'createdBy', 'belongTo', 'createdAt', 'updatedAt', 'likes', 'dislikes','response']
         extra_kwargs = {
             'id': {'read_only': True},
             'isPublic': {'read_only': True},
@@ -48,7 +47,7 @@ Serializer class for Creating Feed
 class FeedCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feed
-        fields = ['id','title', 'description', 'img']
+        fields = ['id','title', 'description', 'img','belongTag']
         
     def validate(self, attrs):
         return super().validate(attrs)
@@ -61,11 +60,10 @@ class ListFeedSerializer(serializers.ModelSerializer):
     likes = serializers.IntegerField()
     dislikes = serializers.IntegerField()
     reviewers = serializers.IntegerField()
-    isFollow = serializers.BooleanField()
     response = serializers.CharField()
     class Meta:
         model = Feed
-        fields = ['id', 'title', 'description','createdBy', 'likes', 'dislikes', 'reviewers','createdAt','isFollow','response']
+        fields = ['id', 'title', 'description','createdBy','isPublic', 'belongTag','likes', 'dislikes', 'reviewers','createdAt','response']
 
 
 class ListGroupFeedSerializer(serializers.ModelSerializer):
@@ -74,8 +72,7 @@ class ListGroupFeedSerializer(serializers.ModelSerializer):
     reviewers = serializers.IntegerField()
     isPin = serializers.IntegerField()
     isFeatured = serializers.IntegerField()
-    isFollow = serializers.BooleanField()
     response = serializers.CharField()
     class Meta:
         model = Feed
-        fields = ['id', 'title','description','createdBy', 'likes', 'dislikes', 'reviewers','createdAt','isPin','isFeatured','isFollow','response']
+        fields = ['id', 'title','description','createdBy', 'likes', 'dislikes', 'reviewers','createdAt','isPin','isFeatured','response']

@@ -37,7 +37,7 @@ class GroupDetailView(generics.GenericAPIView):
     def get(self, request, groupId):
         try:
             group = get_object_or_404(Group, pk=groupId)
-            members = UserGroup.objects.filter(group=groupId).count()
+            members = UserGroup.objects.filter(group=groupId,isBanned=False).count()
             group.members = members
             owner = CustomUser.objects.filter(pk=group.createdBy.id).first()
             group.owner = owner.username
@@ -176,7 +176,6 @@ class GroupFeedCreateView(generics.CreateAPIView):
             #add UserFeed
             feed = Feed.objects.get(pk=serializer.data["id"])
             userFeed = UserFeed(feed=feed,user=request.user)
-            userFeed.isFollowed = True
             userFeed.save()
 
             data['message'] = "Create Feed Successfully"
@@ -228,7 +227,7 @@ class GroupbyCategoryView(generics.ListAPIView):
         type = self.kwargs['category']
         allGroups = Group.objects.filter(category=type)
         for group in allGroups:
-            members = UserGroup.objects.filter(group=group).count()
+            members = UserGroup.objects.filter(group=group,isBanned=False).count()
             group.members = members
         ordered = sorted(allGroups, key=operator.attrgetter('members'), reverse=True)
         return ordered
@@ -246,7 +245,7 @@ class ShowUserGroupView(generics.ListAPIView):
         for group in allGroups:
             owner = CustomUser.objects.filter(pk=group.createdBy.id).first()
             group.owner = owner.username
-            members = UserGroup.objects.filter(group=group).count()
+            members = UserGroup.objects.filter(group=group,isBanned=False).count()
             group.members = members
         ordered = sorted(allGroups, key=operator.attrgetter('members'), reverse=True)
         return ordered
@@ -299,7 +298,7 @@ class GroupFeedListView(generics.ListAPIView):
             feed.dislikes = dislikes
             feed.reviewers = reviewers
             feed.response = 'O'
-            feed.isFollow = False
+
             if feedType.isPin:
                 feed.isPin = 1
             else:
@@ -316,8 +315,7 @@ class GroupFeedListView(generics.ListAPIView):
                         feed.response = 'L'
                     if userfeed.response == 'D':
                         feed.response = 'D'
-                    if userfeed.isFollowed:
-                        feed.isFollow = True
+
                     
         ordered = sorted(allFeeds, key=operator.attrgetter('isPin','createdAt'),reverse=True)
         return ordered
@@ -356,7 +354,7 @@ class GroupListView(generics.ListAPIView):
         for group in allGroups:
             owner = CustomUser.objects.filter(pk=group.createdBy.id).first()
             group.owner = owner.username
-            members = UserGroup.objects.filter(group=group).count()
+            members = UserGroup.objects.filter(group=group,isBanned=False).count()
             group.members = members
         ordered = sorted(allGroups, key=operator.attrgetter('members'), reverse=True)
         return ordered

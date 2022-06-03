@@ -9,6 +9,7 @@ from api.views.groupAdminView import *
 from .views import *
 from .views.feedbackApiView import *
 from .views.reportApiView import *
+from .views.tagApiView import *
 
 
 from rest_framework.authtoken.views import obtain_auth_token
@@ -115,5 +116,11 @@ urlpatterns = [
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('token/verify/', TokenVerifyView.as_view(), name='token_verfy'), 
+
+    #Tag Path
+    path('tag/<uuid:tagId>', TagDetailView.as_view(), name="tag_detail"),
+    path('tag/create/', TagCreateView.as_view(), name="create_tag"),
+    path('tag/join/', TagJoinView.as_view(), name="join_tag"),
+    path('tag/list', TagListView.as_view(), name="tag_list"),
 ]
     

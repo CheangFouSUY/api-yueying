@@ -11,8 +11,9 @@ from ..serializers.userRelationsSerializers import UserFeedDetailSerializer
 from ..models.feeds import Feed
 from ..models.reviews import Review
 from ..models.groups import Group
-from ..models.userRelations import UserFeed, UserGroup
-
+from ..models.userRelations import *
+from ..models.tagRelations import *
+from ..models.tags import *
 
 """ For Admin(superuser)
 GET: Get Feed Detail By Id  # for any
@@ -39,7 +40,6 @@ class FeedDetailView(generics.GenericAPIView):
             feed.likes = likes
             feed.dislikes = dislikes
             feed.response = 'O'
-            feed.isFollow = False
             if not request.user.is_anonymous:
                 userfeed = UserFeed.objects.filter(user=self.request.user,feed=feed).first()
                 if userfeed:
@@ -47,8 +47,7 @@ class FeedDetailView(generics.GenericAPIView):
                         feed.response = 'L'
                     if userfeed.response == 'D':
                         feed.response = 'D'
-                    if userfeed.isFollowed:
-                        feed.isFollow = True
+
             serializer = self.get_serializer(instance=feed)
             data = serializer.data
             data['message'] = "Get Feed Detail Successfully"
@@ -98,10 +97,6 @@ class FeedDetailView(generics.GenericAPIView):
                 else:
                     return Response({"message": "Unauthorized for delete feed"}, status=status.HTTP_401_UNAUTHORIZED)
 
-           
-
-
-
 """
 POST: Create Feed
 """
@@ -114,6 +109,12 @@ class FeedCreateView(generics.CreateAPIView):
     def post(self, request):
         try:
             user = request.user
+            tag = request.data['belongTag']
+            if tag:
+                userTag = UserTag.objects.filter(user=user,tag=tag).first()
+                if not userTag:
+                    return Response({"message": "Please joined tag create feed."}, status=status.HTTP_401_UNAUTHORIZED)
+
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save(createdBy=user, isPublic=True)
@@ -121,8 +122,11 @@ class FeedCreateView(generics.CreateAPIView):
 
             feed = Feed.objects.get(pk=serializer.data["id"])
             userFeed = UserFeed(feed=feed,user=request.user)
-            userFeed.isFollowed = True
             userFeed.save()
+
+            tag = Tag.objects.get(pk=tag)
+            tagFeed = TagFeed(feed=feed,tag=tag)
+            tagFeed.save()
 
             data['message'] = "Create Feed Successfully"
             return Response(data, status=status.HTTP_201_CREATED)
@@ -145,13 +149,9 @@ class FeedListView(generics.ListAPIView):
         searchName = self.request.GET.get('searchName')
         group = self.request.GET.get('belongTo')
         isPublic = self.request.GET.get('isPublic')
-        followedBy = self.request.GET.get('followedBy')  # followedBy = userId
         createdBy = self.request.GET.get('createdBy')
+        tag = self.request.GET.get('tag')
         # by default, get feed return isPublic = True feed
-
-    
-        if isPublic is not None:
-            isPublic = isPublic
 
         filter = Q()
         if search is not None:
@@ -168,15 +168,16 @@ class FeedListView(generics.ListAPIView):
             filter &= Q(belongTo=group)
             isPublic = False    # by Default if it has belongTo field, then it's not public anymore
 
-        if followedBy is not None:
-            filter &= Q(userfeed__user = followedBy, userfeed__isFollowed = True)
 
         if createdBy is not None:
             filter &= Q(createdBy = createdBy)
-            
-        if followedBy is None and createdBy is None and isPublic is not None:
-            filter &= Q(isPublic=isPublic)
 
+        if tag is not None:
+            filter &= Q(belongTag=tag)
+        
+        if isPublic is not None:
+            filter &= Q(isPublic = isPublic)
+            
         allFeeds = Feed.objects.filter(filter).order_by('-createdAt')
         for feed in allFeeds:
             allUserFeeds = UserFeed.objects.filter(feed=feed)
@@ -187,7 +188,6 @@ class FeedListView(generics.ListAPIView):
             feed.dislikes = dislikes
             feed.reviewers = reviewers
             feed.response = 'O'
-            feed.isFollow = False
 
             if not self.request.user.is_anonymous:
                 userfeed = UserFeed.objects.filter(user=self.request.user,feed=feed).first()
@@ -196,8 +196,6 @@ class FeedListView(generics.ListAPIView):
                         feed.response = 'L'
                     if userfeed.response == 'D':
                         feed.response = 'D'
-                    if userfeed.isFollowed:
-                        feed.isFollow = True
 
         if orderBy == 'l':
             orderBy = 'likes'

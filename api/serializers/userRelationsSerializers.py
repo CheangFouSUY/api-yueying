@@ -41,7 +41,7 @@ class UserFeedDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserFeed
         # need modification later on when implement with multiple models
-        fields = ['feed', 'user', 'response', 'isFollowed', 'createdAt', 'updatedAt']
+        fields = ['feed', 'user', 'response', 'createdAt', 'updatedAt']
         extra_kwargs = {
             'feed': {'read_only': True},
             'user': {'read_only': True},

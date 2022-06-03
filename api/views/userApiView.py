@@ -1,3 +1,4 @@
+from xmlrpc.client import Boolean
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.conf import settings
@@ -18,6 +19,7 @@ import re
 
 def UserValidation(email,username,password,password2,mode):
     string = "~!@#$%^&*()_+-*/<>,.[]\/"
+    testSym = False
     if mode == 0:
         if CustomUser.objects.filter(email=email).exists():
             return 1001
@@ -31,7 +33,12 @@ def UserValidation(email,username,password,password2,mode):
     if len(password) < 8:
         return 1004
 
-    testSym = re.search(r"\W",password)
+    for i in string:
+        if i in password:
+            testSym = True
+            break
+            
+    #testSym = re.search(r"\W",password)
     testNum = re.search(r'\d',password)
     my_re = re.compile(r'[A-Za-z]',re.S)
     testAl = re.findall(my_re,password)
