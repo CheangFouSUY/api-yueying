@@ -121,8 +121,8 @@ class FeedCreateView(generics.CreateAPIView):
             data = serializer.data
 
             feed = Feed.objects.get(pk=serializer.data["id"])
-            userFeed = UserFeed(feed=feed,user=request.user)
-            userFeed.save()
+            #userFeed = UserFeed(feed=feed,user=request.user)
+            #userFeed.save()
 
             tag = Tag.objects.get(pk=tag)
             tagFeed = TagFeed(feed=feed,tag=tag)

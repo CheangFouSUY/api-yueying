@@ -331,7 +331,7 @@ class GroupListView(generics.ListAPIView):
     # Get All Groups
     @swagger_auto_schema(operation_summary="Get All Groups")
     def get_queryset(self):
-        orderBy = self.request.GET.get('orderBy')
+        #orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
         searchName = self.request.GET.get('searchName')
         category = self.request.GET.get('category')

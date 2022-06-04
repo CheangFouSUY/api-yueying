@@ -121,6 +121,7 @@ urlpatterns = [
     path('tag/<uuid:tagId>', TagDetailView.as_view(), name="tag_detail"),
     path('tag/create/', TagCreateView.as_view(), name="create_tag"),
     path('tag/join/', TagJoinView.as_view(), name="join_tag"),
+    path('tag/unjoin/<uuid:tagId>', TagUnjoinView.as_view(), name="unjoin_tag"),
     path('tag/list', TagListView.as_view(), name="tag_list"),
 ]
     

@@ -24,22 +24,21 @@ class TagDetailView(generics.GenericAPIView):
     # Get Tag Detail By Id
     @swagger_auto_schema(operation_summary="Get Tag Detail By Id")
     def get(self, request, tagId):
-        try:
+
             tag = get_object_or_404(Tag, pk=tagId)
             tag.feedCount = TagFeed.objects.filter(tag=tag).count()
-            
-            tag.isFollow = False
+            tag.isJoined = False
             
             if not request.user.is_anonymous:
                 joinTag = UserTag.objects.filter(user=request.user,tag=tag).first()
                 if joinTag:
-                    tag.isFollow = True
+                    tag.isJoined=True
+                
             serializer = self.get_serializer(instance=tag)
             data = serializer.data
             data['message'] = "Get Tag Detail Successfully"
             return Response(data, status=status.HTTP_200_OK)
-        except:
-            return Response({"message": "Get Tag Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
+
 
     # Update tag By Id
     @swagger_auto_schema(operation_summary="Update Tag By Id")
@@ -98,10 +97,27 @@ class TagJoinView(generics.CreateAPIView):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             data = serializer.data
-
             data['message'] = "Join Tag Successfully"
             return Response(data, status=status.HTTP_201_CREATED)
-        
+
+class TagUnjoinView(generics.GenericAPIView):
+    serializer_class = TagJoinSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    
+    @swagger_auto_schema(operation_summary="Unjoin Tag")
+    def delete(self, request,tagId):
+        try:
+            tag = get_object_or_404(Tag, pk=tagId)
+            userTag = UserTag.objects.filter(user=request.user,tag=tag).first()
+            if userTag:
+                userTag.delete()
+                return Response({"message": "Unjoin Tag Successfully"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"message": "Join tag first."}, status=status.HTTP_401_UNAUTHORIZED)
+        except:
+            return Response({"message": "Unjoin Tag Failed"}, status=status.HTTP_400_BAD_REQUEST)
+            
+
 class TagListView(generics.ListAPIView):
     serializer_class = TagListSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
