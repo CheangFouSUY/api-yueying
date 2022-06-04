@@ -77,7 +77,7 @@ class FeedDetailView(generics.GenericAPIView):
     def delete(self, request, feedId):
             feed = get_object_or_404(Feed, pk=feedId)
             if request.user == feed.createdBy or request.user.is_staff:
-                #feed.delete()
+                feed.delete()
                 return Response({"message": "Delete Feed Successfully"}, status=status.HTTP_200_OK)
 
             if not feed.isPublic:
@@ -92,7 +92,7 @@ class FeedDetailView(generics.GenericAPIView):
                     if admin.isBanned and admin.banDue and admin.banDue < timezone.now():
                         admin.isBanned=False
                         admin.save()
-                        #feed.delete()
+                        feed.delete()
                         return Response({"message": "Delete Feed Successfully"}, status=status.HTTP_200_OK)
                 else:
                     return Response({"message": "Unauthorized for delete feed"}, status=status.HTTP_401_UNAUTHORIZED)
