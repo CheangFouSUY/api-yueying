@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from django.utils import timezone
 
 
 class Report(models.Model):
@@ -21,3 +22,5 @@ class Report(models.Model):
     category = models.IntegerField(choices=CATEGORY,default = 0)
     result = models.BooleanField(default=False)
     createdBy = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
+    createdAt = models.DateTimeField(default=timezone.now)
+    updatedAt = models.DateTimeField(default=timezone.now)

@@ -162,7 +162,7 @@ class BookListView(generics.ListAPIView):
             book.isSave = False
             book.score = 0
             if not self.request.user.is_anonymous:
-                userbook = UserBook.objects.filter(user=self.request.user,book=book,response='L').first()
+                userbook = UserBook.objects.filter(user=self.request.user,book=book).first()
                 if userbook:
                     if userbook.response == 'L':
                         book.response = 'L'
