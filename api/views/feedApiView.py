@@ -116,7 +116,7 @@ class FeedCreateView(generics.CreateAPIView):
             if tag:
                 userTag = UserTag.objects.filter(user=user,tag=tag).first()
                 if not userTag:
-                    return Response({"message": "Please joined tag create feed."}, status=status.HTTP_401_UNAUTHORIZED)
+                    return Response({"message": "Please joined tag to create feed."}, status=status.HTTP_401_UNAUTHORIZED)
 
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
