@@ -197,6 +197,7 @@ class BookReactionView(generics.GenericAPIView):
     @swagger_auto_schema(operation_summary="React On Book, ie. Likes, Dislikes, Rating")
     def put(self, request, bookId):
         request.data._mutable = True
+        print(request.data['isSaved'])
         book = get_object_or_404(Book, pk=bookId)
         try:
             tmpUserBook = UserBook.objects.get(book=bookId, user=request.user)  # get one
@@ -223,6 +224,7 @@ class BookReactionView(generics.GenericAPIView):
             serializer.is_valid(raise_exception=True)
             serializer.save(book=book, user=request.user, isRated=isRated, updatedAt=timezone.now())
             data = serializer.data
+            print(data)
             data['message'] = "Update UserBook Successfully"
             return Response(data, status=status.HTTP_200_OK)
         else:
@@ -231,4 +233,5 @@ class BookReactionView(generics.GenericAPIView):
             serializer.save(book=book, user=request.user, isRated=isRated)
             data = serializer.data
             data['message'] = "Add UserBook Successfully"
+            print(data)
             return Response(data, status=status.HTTP_201_CREATED)
