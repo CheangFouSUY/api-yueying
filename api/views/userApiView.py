@@ -13,6 +13,8 @@ from ..serializers.userSerializers import *
 from ..utils import *
 from ..models.users import CustomUser
 from ..models.userRelations import *
+from ..serializers.bookSerializers import *
+from ..serializers.movieSerializers import *
 import re
 
 
@@ -298,7 +300,6 @@ class LoginView(generics.GenericAPIView):
 
     @swagger_auto_schema(operation_summary="User Login")
     def post(self, request):
-
         username = request.data['username']
         data = {}
         data['password'] = request.data['password']
@@ -315,8 +316,24 @@ class LoginView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
 
         thumbnail_url = str(generate_presigned_url(str(user.thumbnail))) if user.thumbnail else None
-        
+
+        books = UserBook.objects.filter(user=user, isSaved=True)
+        allBooks = []
+        for b in books:
+            book_thumbnail = str(generate_presigned_url(str(b.book.thumbnail))) if b.book.thumbnail else None
+            book = {'book': b.book.id, 'user': b.user.id, 'isbn': b.book.isbn, 'title': b.book.title, 'thumbnail': book_thumbnail}
+            allBooks.append(book)
+
+        movies = UserMovie.objects.filter(user=user, isSaved=True)
+        allMovies = []
+        for m in movies:
+            movie_thumbnail = str(generate_presigned_url(str(m.movie.thumbnail))) if m.movie.thumbnail else None
+            movie = {'movie': m.movie.id, 'user': m.user.id, 'title': m.movie.title, 'thumbnail': movie_thumbnail}
+            allMovies.append(movie)
+
         data = serializer.data
+        data['books'] = allBooks
+        data['movies'] = allMovies
         data['id'] = user.id
         data['firstName'] = user.firstName or None
         data['lastName'] = user.lastName or None
