@@ -71,7 +71,7 @@ class GroupDetailView(generics.GenericAPIView):
     # Delete Group By Id
     @swagger_auto_schema(operation_summary="Delete Group By Id")
     def delete(self, request, groupId):
-        isMainAdmin = UserGroup.objects.get(group=groupId, user=request.user, isMainAdmin=True).first()
+        isMainAdmin = UserGroup.objects.get(group=groupId, user=request.user, isMainAdmin=True)
         if isMainAdmin:
             try:
                 group = get_object_or_404(Group, pk=groupId)
