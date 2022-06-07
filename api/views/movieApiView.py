@@ -131,6 +131,7 @@ class MovieListView(generics.ListAPIView):
         category = self.request.GET.get('category')
         savedBy = self.request.GET.get('savedBy')  #savedBy = userId
         area = self.request.GET.get('area') 
+        isSaved = self.request.GET.get('isSaved') or None
 
         filter = Q()
         if search is not None:
@@ -153,7 +154,14 @@ class MovieListView(generics.ListAPIView):
         if area is not None:
             filter &= Q(area=area)
 
-        allMovies = Movie.objects.filter(filter).order_by('-createdAt')
+        if isSaved is not None and isSaved == 'True' and not self.request.user.is_anonymous:
+            allMovies = UserMovie.objects.filter(user=self.request.user, isSaved=isSaved).order_by('-createdAt')
+            movies = []
+            for m in allMovies:
+                movies.append(m.movie)
+            allMovies = movies
+        else:
+            allMovies = Movie.objects.filter(filter).order_by('-createdAt')
         for movie in allMovies:
             allUserMovies = UserMovie.objects.filter(movie=movie)
             rating = allUserMovies.filter(isRated=True).aggregate(Avg('rateScore'))

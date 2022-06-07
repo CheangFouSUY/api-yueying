@@ -130,6 +130,7 @@ class BookListView(generics.ListAPIView):
         searchName = self.request.GET.get('searchName')
         category = self.request.GET.get('category')
         savedBy = self.request.GET.get('savedBy')  #savedBy = userId
+        isSaved = self.request.GET.get('isSaved') or None
 
         filter = Q()
         if search is not None:
@@ -148,7 +149,15 @@ class BookListView(generics.ListAPIView):
         if savedBy is not None:
             filter &= Q(userbook__user=savedBy, userbook__isSaved = True)
 
-        allBooks = Book.objects.filter(filter).order_by('-createdAt')
+        if isSaved is not None and isSaved == 'True' and not self.request.user.is_anonymous:
+            allBooks = UserBook.objects.filter(user=self.request.user, isSaved=isSaved).order_by('-createdAt')
+            books = []
+            for b in allBooks:
+                books.append(b.book)
+            allBooks = books
+        else:
+            allBooks = Book.objects.filter(filter).order_by('-createdAt')
+
         for book in allBooks:
             allUserBooks = UserBook.objects.filter(book=book)
             rating = allUserBooks.filter(isRated=True).aggregate(Avg('rateScore'))
