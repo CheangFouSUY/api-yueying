@@ -47,7 +47,7 @@ class BookDetailView(generics.GenericAPIView):
             book.isSave = False
             book.score = 0
             if not request.user.is_anonymous:
-                userbook = UserBook.objects.filter(user=self.request.user,book=book,response='L').first()
+                userbook = UserBook.objects.filter(user=self.request.user,book=book).first()
                 if userbook:
                     if userbook.response == 'L':
                         book.response = 'L'
@@ -61,6 +61,7 @@ class BookDetailView(generics.GenericAPIView):
             serializer = self.get_serializer(instance=book)
             data = serializer.data
             data['message'] = "Get Book Detail Successfully"
+            print(data)
             return Response(data ,status=status.HTTP_200_OK)
         except:
             return Response({"message": "Get Book Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
@@ -206,7 +207,6 @@ class BookReactionView(generics.GenericAPIView):
     @swagger_auto_schema(operation_summary="React On Book, ie. Likes, Dislikes, Rating")
     def put(self, request, bookId):
         request.data._mutable = True
-        print(request.data['isSaved'])
         book = get_object_or_404(Book, pk=bookId)
         try:
             tmpUserBook = UserBook.objects.get(book=bookId, user=request.user)  # get one
@@ -223,7 +223,6 @@ class BookReactionView(generics.GenericAPIView):
                     isRated = True
                 else:
                     isRated = False
-                
         if tmpUserBook:
             """
                 instance take one, but filter return list, so need to specify index.
