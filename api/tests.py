@@ -1,4 +1,5 @@
 from django.test import TestCase
+from pymysql import NULL
 from rest_framework.test import APITestCase
 from .models import CustomUser
 from rest_framework import status
@@ -16,6 +17,21 @@ class TestRegister(APITestCase):
 
     def setUp(self):
         self.url=reverse("register")
+
+    def test_register_password_simple(self):
+        data = {"email" : "test@email.com", "username": "cattest", "password": "123456", "password2": "123456", "securityQuestion": 1, "securityAnswer": "blue"}
+        response = self.client.post(self.url, data, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_register_password_not_match(self):
+        data = {"email" : "test@email.com", "username": "cattest", "password": "Mango11.", "password2": "Mango123.", "securityQuestion": 1, "securityAnswer": "blue"}
+        response = self.client.post(self.url, data, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_register_data_invalid(self):
+        data = {"email" : "test@email.com", "username": "cattest", "password": "Mango11.", "password2": "Mango11.", "securityQuestion": NULL, "securityAnswer": NULL}
+        response = self.client.post(self.url, data, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_register_email_is_sent(self):
         data = {"email" : "test@email.com", "username": "cattest", "password": "Mango11.", "password2": "Mango11.", "securityQuestion": 1, "securityAnswer": "blue"}
