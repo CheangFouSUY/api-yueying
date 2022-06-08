@@ -33,7 +33,10 @@ def send_smtp(user, request, token, subject, fileName, isActivate):
         'request': request,
         'protocol': request.scheme,
 
-        # 
+        # for unit tests:
+        # 'domain': "no_domain_name",
+
+        # for production
         'domain': domain,
         'username': user.username,
         'token': str(token),
