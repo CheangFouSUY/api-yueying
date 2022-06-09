@@ -12,6 +12,7 @@ from ..serializers.userRelationsSerializers import UserMovieDetailSerializer
 from ..utils import *
 from ..models.movies import Movie
 from ..models.userRelations import UserMovie
+from ..api_throttles import *
 
 
 """ For Admin(superuser)
@@ -22,6 +23,7 @@ DELETE: Delete Movie By Id (set isDelete = True)     # for superuser
 class MovieDetailView(generics.GenericAPIView):
     serializer_class = MovieDetailSerializer
     permissions_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     def get_serializer_class(self):
         if self.request.method in ['GET']:
@@ -99,6 +101,7 @@ POST: Create Movie
 class MovieCreateView(generics.CreateAPIView):
     serializer_class = MovieCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Create Movie By Id")
     def post(self, request):
@@ -121,6 +124,7 @@ GET: Get All Movies
 class MovieListView(generics.ListAPIView):
     serializer_class = ListMovieSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     # Get All Movies
     @swagger_auto_schema(operation_summary="Get All Movies")
@@ -207,6 +211,7 @@ PUT: UserMovie relation, uses for response and save
 class MovieReactionView(generics.GenericAPIView):
     serializer_class = UserMovieDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="React On Movie, ie. Likes, Dislikes, Rating")
     def put(self, request, movieId):

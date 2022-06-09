@@ -16,10 +16,12 @@ from ..models.groups import Group
 from ..models.userRelations import UserFeed, UserGroup
 from ..models.tags import Tag
 from ..models.tagRelations import *
+from ..api_throttles import *
 
 class TagDetailView(generics.GenericAPIView):
     serializer_class = TagDetailSerializer
     permissions_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     # Get Tag Detail By Id
     @swagger_auto_schema(operation_summary="Get Tag Detail By Id")
@@ -70,6 +72,7 @@ class TagDetailView(generics.GenericAPIView):
 class TagCreateView(generics.CreateAPIView):
     serializer_class = TagCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Create Tag")
     def post(self, request):
@@ -89,6 +92,7 @@ class TagCreateView(generics.CreateAPIView):
 class TagJoinView(generics.CreateAPIView):
     serializer_class = TagJoinSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Join Tag")
     def post(self, request):
@@ -103,6 +107,7 @@ class TagJoinView(generics.CreateAPIView):
 class TagUnjoinView(generics.GenericAPIView):
     serializer_class = TagJoinSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
     
     @swagger_auto_schema(operation_summary="Unjoin Tag")
     def delete(self, request,tagId):
@@ -121,6 +126,7 @@ class TagUnjoinView(generics.GenericAPIView):
 class TagListView(generics.ListAPIView):
     serializer_class = TagListSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     # Get All Tags
     @swagger_auto_schema(operation_summary="Get All Tags")

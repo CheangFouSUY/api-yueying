@@ -16,6 +16,7 @@ from ..models.userRelations import *
 from ..models.feeds import *
 from ..models.reviews import *
 from ..models.groupRelations import *
+from ..api_throttles import *
 
 '''
 PUT:Set Group Admin -- admin and creator
@@ -24,6 +25,7 @@ PUT: Manage admin request
 class SetRoleView(generics.GenericAPIView):
     serializer_class = UserGroupDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Set Group Role")
     def put(self,request,groupId,userId,role):
@@ -77,6 +79,7 @@ class SetRoleView(generics.GenericAPIView):
 class SetPinFeedView(generics.GenericAPIView):
     serializer_class = GroupFeedDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Pin Feed In Group")
     def put(self,request,groupId,feedId):
@@ -107,6 +110,7 @@ class SetPinFeedView(generics.GenericAPIView):
 class SetFeaturedFeedView(generics.GenericAPIView):
     serializer_class = GroupFeedDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Set Featured Feed In Group")
     def put(self,request,groupId,feedId):
@@ -140,6 +144,7 @@ PUT:Banned Member
 class GroupMemberBanView(generics.GenericAPIView):
     serializer_class = UserGroupDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Ban Group Member, But Cannot Ban Group Main Admin")
     def put(self,request,groupId,userId):

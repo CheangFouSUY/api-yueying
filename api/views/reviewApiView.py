@@ -12,6 +12,7 @@ from ..utils import *
 from ..models.reviews import Review
 from ..models.feeds import Feed
 from ..models.userRelations import *
+from ..api_throttles import *
 
 
 """ For Admin(superuser)
@@ -22,6 +23,7 @@ DELETE: Delete Review By Id (set isDelete = True)     # for superuser or owner
 class ReviewDetailView(generics.GenericAPIView):
     serializer_class = ReviewDetailSerializer
     permissions_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     def get_serializer_class(self):
         if self.request.method in ['GET']:
@@ -89,6 +91,7 @@ POST: Create Review
 class ReviewCreateView(generics.CreateAPIView):
     serializer_class = ReviewCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Create Review")
     def post(self, request):
@@ -129,6 +132,7 @@ GET: Get All Reviews
 class ReviewListView(generics.ListAPIView):
     serializer_class = ListReviewSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     # Get All Reviews
     @swagger_auto_schema(operation_summary="Get All Reviews")
@@ -194,6 +198,7 @@ PUT: UserReview relation, uses for response
 class ReviewReactionView(generics.GenericAPIView):
     serializer_class = UserReviewDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="React On Review, ie. Likes, Dislikes")
     def put(self, request, reviewId):

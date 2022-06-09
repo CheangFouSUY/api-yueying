@@ -15,6 +15,7 @@ from ..models.users import CustomUser
 from ..models.userRelations import *
 from ..serializers.bookSerializers import *
 from ..serializers.movieSerializers import *
+from ..api_throttles import *
 import re
 
 
@@ -57,6 +58,7 @@ POST: Register
 class UserRegisterView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = UserRegisterSerializer
+    throttle_classes = [anonStrictest]
 
     @swagger_auto_schema(operation_summary="Register New User")
     def post(self, request):
@@ -97,6 +99,7 @@ GET: Activate Account
 class UserActivateView(views.APIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = UserActivateSerializer
+    throttle_classes = [anonStrictest]
 
     @swagger_auto_schema(operation_summary="Activate User Account")
     def get(self, request):
@@ -121,6 +124,7 @@ POST: Request Password
 class RequestPasswordView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = RequestPasswordSerializer
+    throttle_classes = [anonStrictest]
 
     @swagger_auto_schema(operation_summary="Request New Password Through Email")
     def post(self, request):
@@ -146,6 +150,7 @@ GET: Validate Token for Reset Password
 class ResetPasswordTokenValidateView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = ResetPasswordSerializer
+    throttle_classes = [anonStrictest]
 
     @swagger_auto_schema(operation_summary="Validate Token Of Request Password")
     def get(self, request):
@@ -167,6 +172,7 @@ PUT: Reset Password (for authenticated user only)
 class ResetPasswordEmailView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ResetPasswordSerializer
+    throttle_classes = [userStrict]
 
     def put(self, request):
         # try:
@@ -185,6 +191,7 @@ class ResetPasswordEmailView(generics.GenericAPIView):
 class ResetPasswordbyOldpasswordView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ResetPasswordByPasswordSerializer
+    throttle_classes = [userStrict]
 
     @swagger_auto_schema(operation_summary="Reset Password Through Old Password")
     def put(self, request):
@@ -216,6 +223,7 @@ class ResetPasswordbyOldpasswordView(generics.GenericAPIView):
 class RequestQuestionView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = RequestQuestionSerializer
+    throttle_classes = [anonStrictest]
 
     @swagger_auto_schema(operation_summary="Request For Security Question By Username")
     def get(self, request):
@@ -233,6 +241,7 @@ class RequestQuestionView(generics.GenericAPIView):
 class ResetPasswordbyQuestionView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = ResetPasswordByQuestionSerializer
+    throttle_classes = [anonStrictest]
 
     @swagger_auto_schema(operation_summary="Reset Password Through Answering Security Question")
     def put(self, request):
@@ -269,6 +278,7 @@ class ResetPasswordbyQuestionView(generics.GenericAPIView):
 class ResetSecurityQuestionView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ResetQuestionSerializer
+    throttle_classes = [userStrictest]
 
     @swagger_auto_schema(operation_summary="Reset Security Question And Answer")
     def put(self, request):
@@ -297,6 +307,7 @@ POST: Login
 class LoginView(generics.GenericAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = LoginSerializer
+    throttle_classes = [anonRelaxed]
 
     @swagger_auto_schema(operation_summary="User Login")
     def post(self, request):
@@ -350,6 +361,7 @@ POST: Logout
 class LogoutView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = LogoutSerializer
+    throttle_classes = [userRelaxed]
 
     @swagger_auto_schema(operation_summary="User Logout")
     def post(self, request):
@@ -371,6 +383,7 @@ DELETE: Delete User By Id (set isDelete = True)     # for superuser or owner
 class UserDetailView(generics.GenericAPIView):
     serializer_class = UserDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     def get_serializer_class(self):
         if self.request.method in ['GET']:
@@ -422,6 +435,7 @@ POST: Create User (email, username)
 class UserCreateView(generics.CreateAPIView):
     serializer_class = UserCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [userStrict]
 
     @swagger_auto_schema(operation_summary="Create User")
     def post(self, request): 
@@ -450,6 +464,7 @@ GET: Get All Users
 class UserListView(generics.ListAPIView):
     serializer_class = ListUserSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Get All Users")
     def get_queryset(self):

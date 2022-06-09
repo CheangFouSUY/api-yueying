@@ -17,6 +17,7 @@ from ..models.userRelations import *
 from ..models.feeds import *
 from ..models.reviews import *
 from ..models.groupRelations import *
+from ..api_throttles import *
 
 """
 GET : Get a group by Id
@@ -26,6 +27,7 @@ DELETE: Delete Group By Id
 class GroupDetailView(generics.GenericAPIView):
     serializer_class = GroupDetailSerializer
     permissions_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     def get_serializer_class(self):
         if self.request.method in ['GET']:
@@ -86,6 +88,7 @@ POST:Create Group
 class GroupCreateView(generics.CreateAPIView):
     serializer_class = GroupCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Create Group")
     def post(self, request):
@@ -109,6 +112,7 @@ POST/DELETE: Join and leave group
 class JoinLeaveGroupView(generics.GenericAPIView):
     serializer_class = UserGroupJoinSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Join Group")
     def post(self,request,groupId):
@@ -151,6 +155,7 @@ POST: Create Feed in Group
 '''
 class GroupFeedCreateView(generics.CreateAPIView):
     serializer_class = FeedCreateSerializer
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Create Feed In Group, Cannot Create If isBanned")
     def post(self,request,groupId):
@@ -189,6 +194,7 @@ POST:Request Group Admin
 class GroupAdminRequestView(generics.CreateAPIView):
     serializer_class = AdminRequestSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Request For Group Admin Role")
     def post(self,request,groupId):
@@ -221,6 +227,7 @@ GET: Sort by Category (members in descending order)
 class GroupbyCategoryView(generics.ListAPIView):
     serializer_class = ListGroupSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Get All Groups By Category")
     def get_queryset(self):
@@ -238,6 +245,7 @@ GET: Show group join by user
 class ShowUserGroupView(generics.ListAPIView):
     serializer_class = ListGroupSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Get All Group Joined By User")
     def get_queryset(self):
@@ -258,6 +266,7 @@ GET : Show/Search Group Feed
 class GroupFeedListView(generics.ListAPIView):
     serializer_class = ListGroupFeedSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     # Get All Group Feeds
     @swagger_auto_schema(operation_summary="Get All Group Feeds")
@@ -327,6 +336,7 @@ GET:Show/Search Group
 class GroupListView(generics.ListAPIView):
     serializer_class = ListGroupSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     # Get All Groups
     @swagger_auto_schema(operation_summary="Get All Groups")
@@ -365,6 +375,7 @@ GET:Show Member
 class GroupMemberView(generics.ListAPIView):
     serializer_class = ListMemberSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Get All Group Members In A Group")
     def get_queryset(self):
@@ -425,6 +436,7 @@ GET:Show All Admin Request（All result）
 class ShowRequestView(generics.ListAPIView):
     serializer_class = AdminRequestSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Get All Admin Requests")
     def get_queryset(self):
@@ -452,6 +464,7 @@ GET:Show User Who Have Pending Admin Request
 class ShowRequestUserView(generics.ListAPIView):
     serializer_class = ListUserSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Get User With Pending Admin Request")
     def get_queryset(self):

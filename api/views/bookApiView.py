@@ -13,7 +13,7 @@ from ..serializers.bookSerializers import *
 from ..serializers.userRelationsSerializers import UserBookDetailSerializer
 from ..models.books import Book
 from ..models.userRelations import UserBook
-
+from ..api_throttles import *
 
 """ For Admin(superuser)
 GET: Get Book Detail By Id  # for any
@@ -23,6 +23,7 @@ DELETE: Delete Book By Id (set isDelete = True)     # for superuser
 class BookDetailView(generics.GenericAPIView):
     serializer_class = BookDetailSerializer
     permissions_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     def get_serializer_class(self):
         if self.request.method in ['GET']:
@@ -101,6 +102,7 @@ POST: Create Book
 class BookCreateView(generics.CreateAPIView):
     serializer_class = BookCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Create Book")
     def post(self, request):
@@ -122,6 +124,7 @@ GET: Get All Books
 class BookListView(generics.ListAPIView):
     serializer_class = ListBookSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     # Get All Books
     @swagger_auto_schema(operation_summary="Get All Books")
@@ -203,6 +206,7 @@ PUT: UserBook relation, uses for response and bookmark
 class BookReactionView(generics.GenericAPIView):
     serializer_class = UserBookDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="React On Book, ie. Likes, Dislikes, Rating")
     def put(self, request, bookId):

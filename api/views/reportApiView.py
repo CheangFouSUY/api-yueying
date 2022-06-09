@@ -6,6 +6,7 @@ from rest_framework import generics, status, permissions
 from drf_yasg.utils import swagger_auto_schema
 
 from ..serializers.reportSerializers import *
+from ..api_throttles import *
 
 
 
@@ -18,6 +19,7 @@ DELETE: Delete Report By Id  # for superuser
 class ReportDetailView(generics.GenericAPIView):
     serializer_class = ReportDetailSerializer
     permissions_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     # Get Report Detail By Id
     @swagger_auto_schema(operation_summary="Get Report By Id")
@@ -67,6 +69,7 @@ POST: Create Report
 class ReportCreateView(generics.CreateAPIView):
     serializer_class = ReportCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Get All Books")
     def post(self, request):
@@ -88,6 +91,7 @@ GET: Get All Reports
 class ReportListView(generics.ListAPIView):
     serializer_class = ListReportSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     # Get All Reports
     @swagger_auto_schema(operation_summary="Get All Reports")

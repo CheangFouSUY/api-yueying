@@ -14,6 +14,7 @@ from ..models.groups import Group
 from ..models.userRelations import *
 from ..models.tagRelations import *
 from ..models.tags import *
+from ..api_throttles import *
 
 """ For Admin(superuser)
 GET: Get Feed Detail By Id  # for any
@@ -23,6 +24,7 @@ DELETE: Delete Feed By Id (set isDelete = True)     # for superuser or owner
 class FeedDetailView(generics.GenericAPIView):
     serializer_class = FeedDetailSerializer
     permissions_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     def get_serializer_class(self):
         if self.request.method in ['GET']:
@@ -106,7 +108,7 @@ POST: Create Feed
 class FeedCreateView(generics.CreateAPIView):
     serializer_class = FeedCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Create Feed")
     def post(self, request):
@@ -143,6 +145,7 @@ GET: Get All Feeds
 class FeedListView(generics.ListAPIView):
     serializer_class = ListFeedSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     # Get All Feeds
     @swagger_auto_schema(operation_summary="Get All Feeds")
@@ -219,6 +222,7 @@ PUT: UserFeed relation, uses for response and follow
 class FeedReactionView(generics.GenericAPIView):
     serializer_class = UserFeedDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="React On Feed, ie. Likes, Dislikes")
     def put(self, request, feedId):
