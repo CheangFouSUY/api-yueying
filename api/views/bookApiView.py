@@ -3,6 +3,7 @@ from urllib import response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Avg, Q
+from platformdirs import user_config_dir
 from requests import request
 from rest_framework.response import Response
 from rest_framework import generics, status, permissions
@@ -12,7 +13,7 @@ from ..serializers.bookSerializers import *
 from ..serializers.userRelationsSerializers import UserBookDetailSerializer
 from ..models.books import Book
 from ..models.userRelations import UserBook
-
+from ..api_throttles import *
 
 """ For Admin(superuser)
 GET: Get Book Detail By Id  # for any
@@ -22,6 +23,7 @@ DELETE: Delete Book By Id (set isDelete = True)     # for superuser
 class BookDetailView(generics.GenericAPIView):
     serializer_class = BookDetailSerializer
     permissions_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     def get_serializer_class(self):
         if self.request.method in ['GET']:
@@ -46,22 +48,21 @@ class BookDetailView(generics.GenericAPIView):
             book.isSave = False
             book.score = 0
             if not request.user.is_anonymous:
-                userLike = UserBook.objects.filter(user=self.request.user,book=book,response='L').first()
-                if userLike:
-                    book.response = 'L'
-                userDislike = UserBook.objects.filter(user=self.request.user,book=book,response='D').first()
-                if userDislike:
-                    book.response = 'D'
-                userRate = UserBook.objects.filter(user=self.request.user,book=book,isRated=True).first()
-                if userRate:
-                    book.isRate = True
-                    book.score = userRate.rateScore
-                userSave = UserBook.objects.filter(user=self.request.user,book=book,isSaved=True).first()
-                if userSave:
-                    book.isSave = True
+                userbook = UserBook.objects.filter(user=self.request.user,book=book).first()
+                if userbook:
+                    if userbook.response == 'L':
+                        book.response = 'L'
+                    if userbook.response == 'D':
+                        book.response = 'D'
+                    if userbook.isRated:
+                        book.isRate = True
+                        book.score = userbook.rateScore
+                    if userbook.isSaved:
+                        book.isSave = True
             serializer = self.get_serializer(instance=book)
             data = serializer.data
             data['message'] = "Get Book Detail Successfully"
+            print(data)
             return Response(data ,status=status.HTTP_200_OK)
         except:
             return Response({"message": "Get Book Detail Failed"}, status=status.HTTP_400_BAD_REQUEST)
@@ -101,6 +102,7 @@ POST: Create Book
 class BookCreateView(generics.CreateAPIView):
     serializer_class = BookCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Create Book")
     def post(self, request):
@@ -122,27 +124,44 @@ GET: Get All Books
 class BookListView(generics.ListAPIView):
     serializer_class = ListBookSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     # Get All Books
     @swagger_auto_schema(operation_summary="Get All Books")
     def get_queryset(self):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
+        searchName = self.request.GET.get('searchName')
         category = self.request.GET.get('category')
         savedBy = self.request.GET.get('savedBy')  #savedBy = userId
+        isSaved = self.request.GET.get('isSaved') or None
 
         filter = Q()
         if search is not None:
             searchTerms = search.split(' ')
             for term in searchTerms:
                 filter &= Q(isbn__icontains=term) | Q(title__icontains=term) | Q(author__icontains=term) | Q(publisher__icontains=term)
+        
+        if searchName is not None:
+            searchTerms = searchName.split(' ')
+            for term in searchTerms:
+                filter &= Q(title__icontains=term)
+        
         if category is not None:
             filter &= Q(category=category)
 
         if savedBy is not None:
             filter &= Q(userbook__user=savedBy, userbook__isSaved = True)
 
-        allBooks = Book.objects.filter(filter).order_by('-createdAt')
+        if isSaved is not None and isSaved == 'True' and not self.request.user.is_anonymous:
+            allBooks = UserBook.objects.filter(user=self.request.user, isSaved=isSaved).order_by('-createdAt')
+            books = []
+            for b in allBooks:
+                books.append(b.book)
+            allBooks = books
+        else:
+            allBooks = Book.objects.filter(filter).order_by('-createdAt')
+
         for book in allBooks:
             allUserBooks = UserBook.objects.filter(book=book)
             rating = allUserBooks.filter(isRated=True).aggregate(Avg('rateScore'))
@@ -156,19 +175,17 @@ class BookListView(generics.ListAPIView):
             book.isSave = False
             book.score = 0
             if not self.request.user.is_anonymous:
-                userLike = UserBook.objects.filter(user=self.request.user,book=book,response='L').first()
-                if userLike:
-                    book.response = 'L'
-                userDislike = UserBook.objects.filter(user=self.request.user,book=book,response='D').first()
-                if userDislike:
-                    book.response = 'D'
-                userRate = UserBook.objects.filter(user=self.request.user,book=book,isRated=True).first()
-                if userRate:
-                    book.isRate = True
-                    book.score = userRate.rateScore
-                userSave = UserBook.objects.filter(user=self.request.user,book=book,isSaved=True).first()
-                if userSave:
-                    book.isSave = True
+                userbook = UserBook.objects.filter(user=self.request.user,book=book).first()
+                if userbook:
+                    if userbook.response == 'L':
+                        book.response = 'L'
+                    if userbook.response == 'D':
+                        book.response = 'D'
+                    if userbook.isRated:
+                        book.isRate = True
+                        book.score = userbook.rateScore
+                    if userbook.isSaved:
+                        book.isSave = True
 
         if orderBy == 'l':
             orderBy = 'likes'
@@ -189,6 +206,7 @@ PUT: UserBook relation, uses for response and bookmark
 class BookReactionView(generics.GenericAPIView):
     serializer_class = UserBookDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="React On Book, ie. Likes, Dislikes, Rating")
     def put(self, request, bookId):
@@ -198,6 +216,7 @@ class BookReactionView(generics.GenericAPIView):
             tmpUserBook = UserBook.objects.get(book=bookId, user=request.user)  # get one
         except UserBook.DoesNotExist:
             tmpUserBook = None
+        isRated = False
         rateScore = int(request.data['rateScore'])  # by default, it's a str
         if rateScore > 0:
             isRated = True
@@ -208,7 +227,6 @@ class BookReactionView(generics.GenericAPIView):
                     isRated = True
                 else:
                     isRated = False
-                
         if tmpUserBook:
             """
                 instance take one, but filter return list, so need to specify index.
@@ -218,6 +236,7 @@ class BookReactionView(generics.GenericAPIView):
             serializer.is_valid(raise_exception=True)
             serializer.save(book=book, user=request.user, isRated=isRated, updatedAt=timezone.now())
             data = serializer.data
+            print(data)
             data['message'] = "Update UserBook Successfully"
             return Response(data, status=status.HTTP_200_OK)
         else:
@@ -226,4 +245,5 @@ class BookReactionView(generics.GenericAPIView):
             serializer.save(book=book, user=request.user, isRated=isRated)
             data = serializer.data
             data['message'] = "Add UserBook Successfully"
+            print(data)
             return Response(data, status=status.HTTP_201_CREATED)

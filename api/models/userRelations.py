@@ -33,7 +33,7 @@ class UserMovie(models.Model):
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
 
-#Feed followed,like/dislike by user
+#Feed like/dislike by user
 class UserFeed(models.Model):
     CHOICE=(
         ('O', 'Other'),
@@ -43,9 +43,11 @@ class UserFeed(models.Model):
     feed = models.ForeignKey("Feed", on_delete=models.CASCADE, null=False, blank=False)
     user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
     response = models.CharField(choices=CHOICE, max_length=10, null=False, blank=False,default='O')
-    isFollowed = models.BooleanField(default=False)
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = ('feed','user')
 
 #Review like/dislike by user
 class UserReview(models.Model):
@@ -59,6 +61,9 @@ class UserReview(models.Model):
     response = models.CharField(choices=CHOICE, max_length=10, null=False, blank=False,default='O')
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = ('review','user')
 
 #Group joined by user
 class UserGroup(models.Model):
@@ -74,3 +79,13 @@ class UserGroup(models.Model):
     class Meta:
         unique_together = ('group','user')
 
+#Tag joined by user
+class UserTag(models.Model):
+    tag = models.ForeignKey("Tag", on_delete=models.CASCADE, null=False, blank=False)
+    user = models.ForeignKey("CustomUser", on_delete=models.CASCADE, null=False, blank=False)
+    #isJoined = models.BooleanField(default=False)
+    createdAt = models.DateTimeField(default=timezone.now)
+    updatedAt = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = ('tag','user')

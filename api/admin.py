@@ -1,3 +1,4 @@
+
 from django.contrib import admin
 
 from .models.feedbacks import Feedback
@@ -10,6 +11,8 @@ from .models.feeds import Feed
 from .models.reviews import Review
 from .models.userRelations import *
 from .models.groupRelations import *
+from .models.tagRelations import *
+from .models.tags import *
 
 # Register your models here.
 
@@ -26,7 +29,7 @@ class GroupAdminConfig(admin.ModelAdmin):
     list_display = ('id', 'groupName', 'category','createdBy')
 
 class FeedAdminConfig(admin.ModelAdmin):
-    list_display = ('id', 'title', 'isPublic','createdBy', 'belongTo', 'img')
+    list_display = ('id', 'title', 'isPublic','createdBy', 'belongTo', 'belongTag','img')
 
 class ReviewAdminConfig(admin.ModelAdmin):
     list_display = ('id', 'title', 'createdBy', 'img')
@@ -44,7 +47,7 @@ class UserMovieAdminConfig(admin.ModelAdmin):
     list_display = ('movie', 'user', 'response', 'isSaved')
 
 class UserFeedAdminConfig(admin.ModelAdmin):
-    list_display = ('feed', 'user', 'response', 'isFollowed')
+    list_display = ('feed', 'user', 'response')
 
 class UserReviewAdminConfig(admin.ModelAdmin):
     list_display = ('review', 'user', 'response')
@@ -55,9 +58,17 @@ class UserGroupAdminConfig(admin.ModelAdmin):
 class GroupFeedAdminConfig(admin.ModelAdmin):
     list_display = ('feed', 'group', 'isPin', 'isFeatured')
 
-class GroupAdminApplyConfig(admin.ModelAdmin):
+class GroupAdminApplyAdminConfig(admin.ModelAdmin):
     list_display = ('user','group','result')
 
+class TagAdminConfig(admin.ModelAdmin):
+    list_display = ('id','title','category')
+
+class UserTagAdminConfig(admin.ModelAdmin):
+    list_display = ('user','tag')
+
+class TagFeedAdminConfig(admin.ModelAdmin):
+    list_display = ('feed','tag')
 
 admin.site.register(CustomUser, UserAdminConfig)
 admin.site.register(Book, BookAdminConfig)
@@ -73,4 +84,7 @@ admin.site.register(UserFeed, UserFeedAdminConfig)
 admin.site.register(UserReview, UserReviewAdminConfig)
 admin.site.register(UserGroup, UserGroupAdminConfig)
 admin.site.register(GroupFeed, GroupFeedAdminConfig)
-admin.site.register(GroupAdminRequest, GroupAdminApplyConfig)
+admin.site.register(GroupAdminRequest, GroupAdminApplyAdminConfig)
+admin.site.register(Tag, TagAdminConfig)
+admin.site.register(UserTag, UserTagAdminConfig)
+admin.site.register(TagFeed, TagFeedAdminConfig)

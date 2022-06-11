@@ -1,3 +1,4 @@
+from unittest.util import _MAX_LENGTH
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
@@ -10,6 +11,7 @@ from ..models.users import CustomUser
 from .userRelationsSerializers import UserBookDetailSerializer, UserFeedDetailSerializer, UserMovieDetailSerializer
 from django.contrib.auth.hashers import make_password,check_password
 
+
 """
 Serializer class for registering new user
 """
@@ -21,25 +23,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ['email','username','password', 'password2','securityQuestion','securityAnswer']
         extra_kwargs = { 'password': {'write_only': True}, }
-    
-    def validate(self, attrs):
-        email = attrs.get('email', '')
-        username = attrs.get('username', '')
-        password = attrs.get('password', '')
-        password2 = attrs.get('password2', '')
-
-        if CustomUser.objects.filter(email=email).exists():
-            raise ValidationError("Email is taken.")
-
-        if CustomUser.objects.filter(username=username).exists():
-            raise ValidationError("Username is taken.")
-
-        if password != password2:
-            raise ValidationError("Password must match.")
-        
-        # uses validators listed in settings.
-        if validate_password(password) is None:
-            return super().validate(attrs)
     
     def save(self):
         instance = self.Meta.model(
@@ -76,6 +59,8 @@ class UserActivateSerializer(serializers.ModelSerializer):
 Serializer class for Request New Password
 """
 class RequestPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    username = serializers.CharField(max_length=255)
     
     class Meta:
         model = CustomUser
@@ -108,27 +93,24 @@ class ResetPasswordSerializer(serializers.Serializer):
         password = self.validated_data['password']
         user = self.user
         user.set_password(password)
-        user.save(updatedAt=timezone.now())
+        user.updatedAt = timezone.now()
+        user.save()
+
+class RequestQuestionSerializer(serializers.Serializer):
+    class Meta:
+        model = CustomUser
+        fields = ['securityQuestion']
 
 class ResetPasswordByQuestionSerializer(serializers.Serializer):
+    username = serializers.CharField()
     newpassword = serializers.CharField(style={'input_type': 'password'}, write_only=True)
     newpassword2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
     securityQuestion = serializers.IntegerField()
+    securityAnswer = serializers.CharField()
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
-
-    def validate(self, attrs):
-        password = attrs.get('newpassword', '')
-        password2 = attrs.get('newpassword2', '')
-        
-        if password != password2:
-            raise ValidationError("Password must match.")
-
-        # uses validators listed in settings.
-        if validate_password(password) is None:
-            return super().validate(attrs)
 
     def updatePassword(self):
         password = self.validated_data['newpassword']
@@ -145,18 +127,7 @@ class ResetPasswordByPasswordSerializer(serializers.Serializer):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
-
-    def validate(self, attrs):
-        password = attrs.get('newpassword', '')
-        password2 = attrs.get('newpassword2', '')
-        
-        if password != password2:
-            raise ValidationError("Password must match.")
-
-        # uses validators listed in settings.
-        if validate_password(password) is None:
-            return super().validate(attrs)
-
+   
     def updatePassword(self):
         password = self.validated_data['newpassword']
         user = self.user
@@ -166,14 +137,13 @@ class ResetPasswordByPasswordSerializer(serializers.Serializer):
 
 class ResetQuestionSerializer(serializers.Serializer):
     password = serializers.CharField(style={'input_type': 'password'}, write_only=True)
+    securityQuestion = serializers.CharField()
+    securityAnswer = serializers.CharField()
 
     class Meta:
         model = CustomUser
         fields = ['securityQuestion','securityAnswer']
-    
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user')
-        super().__init__(*args, **kwargs)
+
 
 """
 Serializer class for login
@@ -267,7 +237,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
         if CustomUser.objects.filter(username=username).exists():
             raise ValidationError("Username is taken.")
-
+    
     def save(self):
         instance = self.Meta.model(
             email=self.validated_data['email'],
@@ -285,7 +255,10 @@ class ListUserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'profile']
 
 class ListMemberSerializer(serializers.ModelSerializer):
-    isAdmin = serializers.IntegerField()
+    isAdmin = serializers.BooleanField()
+    isMainAdmin = serializers.BooleanField()
+    isBanned = serializers.BooleanField()
+    isNormal = serializers.BooleanField()
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'profile','isAdmin']
+        fields = ['id', 'username', 'email', 'profile','isMainAdmin','isAdmin','isNormal','isBanned']

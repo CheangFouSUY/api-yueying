@@ -11,6 +11,9 @@ class GroupFeed(models.Model):
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
 
+    class Meta:
+        unique_together = ('group','feed')
+
 class GroupAdminRequest(models.Model):
     RESULT = (
         (0, 'Pending'),
@@ -22,3 +25,6 @@ class GroupAdminRequest(models.Model):
     createdAt = models.DateTimeField(default=timezone.now)
     updatedAt = models.DateTimeField(default=timezone.now)
     result = models.IntegerField(choices=RESULT,null=False, blank=False, default=0)
+
+    class Meta:
+        unique_together = ('group','user')

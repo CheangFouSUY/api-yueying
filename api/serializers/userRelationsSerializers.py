@@ -7,6 +7,7 @@ from ..models.feeds import Feed
 from ..models.reviews import Review
 from ..models.users import CustomUser
 from ..models.userRelations import *
+from rest_framework.response import Response
 
 class UserBookDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -40,7 +41,7 @@ class UserFeedDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserFeed
         # need modification later on when implement with multiple models
-        fields = ['feed', 'user', 'response', 'isFollowed', 'createdAt', 'updatedAt']
+        fields = ['feed', 'user', 'response', 'createdAt', 'updatedAt']
         extra_kwargs = {
             'feed': {'read_only': True},
             'user': {'read_only': True},

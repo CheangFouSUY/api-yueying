@@ -4,9 +4,8 @@ from rest_framework.response import Response
 from rest_framework import generics, status, permissions
 from drf_yasg.utils import swagger_auto_schema
 
-
 from ..serializers.feedbackSerializers import *
-
+from ..api_throttles import *
 
 """ For Admin(superuser)
 GET: Get Feedback Detail By Id  # for any
@@ -15,6 +14,7 @@ DELETE: Delete Feedback By Id  # for superuser
 class FeedbackDetailView(generics.GenericAPIView):
     serializer_class = FeedbackDetailSerializer
     permissions_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     # Get Feedback Detail By Id
     @swagger_auto_schema(operation_summary="Get Feed Detail By Id")
@@ -46,6 +46,7 @@ POST: Create Feedback
 class FeedbackCreateView(generics.CreateAPIView):
     serializer_class = FeedbackCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Create Feedback")
     def post(self, request):
@@ -63,6 +64,7 @@ GET: Get All Feedbacks
 class FeedbackListView(generics.ListAPIView):
     serializer_class = ListFeedbackSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     # Get All Feedbacks
     @swagger_auto_schema(operation_summary="Get All Feedbacks")

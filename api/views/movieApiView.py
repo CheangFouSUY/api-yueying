@@ -12,6 +12,7 @@ from ..serializers.userRelationsSerializers import UserMovieDetailSerializer
 from ..utils import *
 from ..models.movies import Movie
 from ..models.userRelations import UserMovie
+from ..api_throttles import *
 
 
 """ For Admin(superuser)
@@ -22,6 +23,7 @@ DELETE: Delete Movie By Id (set isDelete = True)     # for superuser
 class MovieDetailView(generics.GenericAPIView):
     serializer_class = MovieDetailSerializer
     permissions_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     def get_serializer_class(self):
         if self.request.method in ['GET']:
@@ -46,19 +48,17 @@ class MovieDetailView(generics.GenericAPIView):
             movie.isSave = False
             movie.score = 0
             if not request.user.is_anonymous:
-                userLike = UserMovie.objects.filter(user=self.request.user,movie=movie,response='L').first()
-                if userLike:
-                    movie.response = 'L'
-                userDislike = UserMovie.objects.filter(user=self.request.user,movie=movie,response='D').first()
-                if userDislike:
-                    movie.response = 'D'
-                userRate = UserMovie.objects.filter(user=self.request.user,movie=movie,isRated=True).first()
-                if userRate:
-                    movie.isRate = True
-                    movie.score = userRate.rateScore
-                userSave = UserMovie.objects.filter(user=self.request.user,movie=movie,isSaved=True).first()
-                if userSave:
-                    movie.isSave = True
+                usermovie =  UserMovie.objects.filter(user=self.request.user,movie=movie).first()
+                if usermovie:
+                    if usermovie.response == 'L':
+                        movie.response = 'L'
+                    if usermovie.response == 'D':
+                        movie.response = 'D'
+                    if usermovie.isRated:
+                        movie.isRate = True
+                        movie.score = usermovie.rateScore
+                    if usermovie.isSaved:
+                        movie.isSave = True
             serializer = self.get_serializer(instance=movie)
             data = serializer.data
             data['message'] = "Get Movie Detail Successfully"
@@ -101,6 +101,7 @@ POST: Create Movie
 class MovieCreateView(generics.CreateAPIView):
     serializer_class = MovieCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Create Movie By Id")
     def post(self, request):
@@ -123,27 +124,48 @@ GET: Get All Movies
 class MovieListView(generics.ListAPIView):
     serializer_class = ListMovieSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     # Get All Movies
     @swagger_auto_schema(operation_summary="Get All Movies")
     def get_queryset(self):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
+        searchName = self.request.GET.get('searchName')
         category = self.request.GET.get('category')
         savedBy = self.request.GET.get('savedBy')  #savedBy = userId
+        area = self.request.GET.get('area') 
+        isSaved = self.request.GET.get('isSaved') or None
 
         filter = Q()
         if search is not None:
             searchTerms = search.split(' ')
             for term in searchTerms:
                 filter &= Q(title__icontains=term) | Q(director__icontains=term) | Q(actor__icontains=term)
+        
+        if searchName is not None:
+            searchTerms = searchName.split(' ')
+            for term in searchTerms:
+                filter &= Q(title__icontains=term)
+        
+        
         if category is not None:
             filter &= Q(category=category)
 
         if savedBy is not None:
             filter &= Q(usermovie__user=savedBy, usermovie__isSaved = True)
+        
+        if area is not None:
+            filter &= Q(area=area)
 
-        allMovies = Movie.objects.filter(filter).order_by('-createdAt')
+        if isSaved is not None and isSaved == 'True' and not self.request.user.is_anonymous:
+            allMovies = UserMovie.objects.filter(user=self.request.user, isSaved=isSaved).order_by('-createdAt')
+            movies = []
+            for m in allMovies:
+                movies.append(m.movie)
+            allMovies = movies
+        else:
+            allMovies = Movie.objects.filter(filter).order_by('-createdAt')
         for movie in allMovies:
             allUserMovies = UserMovie.objects.filter(movie=movie)
             rating = allUserMovies.filter(isRated=True).aggregate(Avg('rateScore'))
@@ -157,19 +179,17 @@ class MovieListView(generics.ListAPIView):
             movie.isSave = False
             movie.score = 0
             if not self.request.user.is_anonymous:
-                userLike = UserMovie.objects.filter(user=self.request.user,movie=movie,response='L').first()
-                if userLike:
-                    movie.response = 'L'
-                userDislike = UserMovie.objects.filter(user=self.request.user,movie=movie,response='D').first()
-                if userDislike:
-                    movie.response = 'D'
-                userRate = UserMovie.objects.filter(user=self.request.user,movie=movie,isRated=True).first()
-                if userRate:
-                    movie.isRate = True
-                    movie.score = userRate.rateScore
-                userSave = UserMovie.objects.filter(user=self.request.user,movie=movie,isSaved=True).first()
-                if userSave:
-                    movie.isSave = True
+                usermovie =  UserMovie.objects.filter(user=self.request.user,movie=movie).first()
+                if usermovie:
+                    if usermovie.response == 'L':
+                        movie.response = 'L'
+                    if usermovie.response == 'D':
+                        movie.response = 'D'
+                    if usermovie.isRated:
+                        movie.isRate = True
+                        movie.score = usermovie.rateScore
+                    if usermovie.isSaved:
+                        movie.isSave = True
 
         if orderBy == 'l':
             orderBy = 'likes'
@@ -191,6 +211,7 @@ PUT: UserMovie relation, uses for response and save
 class MovieReactionView(generics.GenericAPIView):
     serializer_class = UserMovieDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="React On Movie, ie. Likes, Dislikes, Rating")
     def put(self, request, movieId):
@@ -200,6 +221,8 @@ class MovieReactionView(generics.GenericAPIView):
             tmpUserMovie = UserMovie.objects.get(movie=movieId, user=request.user)  # get one
         except UserMovie.DoesNotExist:
             tmpUserMovie = None
+
+        isRated = False
         rateScore = int(request.data['rateScore'])  # by default, it's a str
         
         if rateScore > 0:

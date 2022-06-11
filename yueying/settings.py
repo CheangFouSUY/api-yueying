@@ -34,7 +34,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['127.0.0.1']
 
 
 # Application definition
@@ -76,7 +76,7 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.FormParser'
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 50
+    'PAGE_SIZE': 50,
 }
 
 SIMPLE_JWT = {
@@ -189,6 +189,7 @@ EMAIL_USE_TLS = env('EMAIL_USE_TLS')
 EMAIL_PORT = env('EMAIL_PORT')
 
 BACKEND_URL = env('BACKEND_URL')
+FRONTEND_URL = env('FRONTEND_URL')
 
 # AWS S3 Bucket
 AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')

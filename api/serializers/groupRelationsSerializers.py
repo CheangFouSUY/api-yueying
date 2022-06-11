@@ -8,7 +8,7 @@ from ..models.userRelations import UserGroup
 class GroupFeedDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = GroupFeed
-        fields = ['feed', 'group', 'isPin', 'isFeatured', 'createdAt', 'updatedAt']
+        fields = ['feed', 'group', 'createdAt', 'updatedAt']
         extra_kwargs = {
             'feed': {'read_only': True},
             'group': {'read_only': True},

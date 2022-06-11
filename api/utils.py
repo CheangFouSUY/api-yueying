@@ -12,6 +12,11 @@ from django.core.mail import EmailMessage
 from django.utils import timezone
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
+import boto3
+from botocore.exceptions import ClientError
+from botocore.config import Config
+import requests
+
 
 def get_tokens(user):
     refresh = RefreshToken.for_user(user)
@@ -21,13 +26,18 @@ def get_tokens(user):
         'access': str(refresh.access_token),
     }
 
-def send_smtp(user, request, token, subject, fileName):
+def send_smtp(user, request, token, subject, fileName, isActivate):
+    #domain = settings.BACKEND_URL if isActivate else settings.FRONTEND_URL
+    domain = settings.FRONTEND_URL
     context = {
         'request': request,
         'protocol': request.scheme,
 
-        # 
-        'domain': settings.BACKEND_URL,
+        # for unit tests:
+        # 'domain': "no_domain_name",
+
+        # for production
+        'domain': domain,
         'username': user.username,
         'token': str(token),
         'email': user.email
@@ -75,7 +85,8 @@ def get_thumbnail(f, quality, isThumbnail, ratio):
         image = image.resize((finalWidth, finalHeight))
 
         # after modifications, save it to the thumbnail
-        image.save(thumbnail, format='JPEG', quality=quality)
+        # image.save(thumbnail, format='JPEG', quality=quality)
+        image.save(thumbnail, format='PNG', quality=quality)
         thumbnail.seek(0)
 
         newImage = InMemoryUploadedFile(thumbnail, 'ImageField', "%s.jpg" % name, 'image/jpeg',
@@ -83,3 +94,17 @@ def get_thumbnail(f, quality, isThumbnail, ratio):
         return newImage
     except Exception as e:
         return e
+
+
+def generate_presigned_url(object_key, expiry=3600):
+
+    client = boto3.client("s3",region_name=settings.AWS_S3_REGION_NAME,
+                          aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                          aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
+    try:
+        response = client.generate_presigned_url('get_object',
+                                                  Params={'Bucket': settings.AWS_STORAGE_BUCKET_NAME,'Key': object_key},
+                                                  ExpiresIn=expiry)
+        return(response)
+    except ClientError as e:
+        return(e)

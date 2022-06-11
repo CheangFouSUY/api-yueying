@@ -10,7 +10,9 @@ from ..serializers.reviewSerializers import *
 from ..serializers.userRelationsSerializers import UserReviewDetailSerializer
 from ..utils import *
 from ..models.reviews import Review
+from ..models.feeds import Feed
 from ..models.userRelations import *
+from ..api_throttles import *
 
 
 """ For Admin(superuser)
@@ -21,6 +23,7 @@ DELETE: Delete Review By Id (set isDelete = True)     # for superuser or owner
 class ReviewDetailView(generics.GenericAPIView):
     serializer_class = ReviewDetailSerializer
     permissions_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     def get_serializer_class(self):
         if self.request.method in ['GET']:
@@ -39,12 +42,12 @@ class ReviewDetailView(generics.GenericAPIView):
             review.dislikes = dislikes
             review.response = 'O'
             if not request.user.is_anonymous:
-                userLike = UserReview.objects.filter(user=self.request.user,review=review,response='L').first()
-                if userLike:
-                    review.response = 'L'
-                userDislike = UserReview.objects.filter(user=self.request.user,review=review,response='D').first()
-                if userDislike:
-                    review.response = 'D'
+                userreview = UserReview.objects.filter(user=self.request.user,review=review).first()
+                if userreview:
+                    if userreview.response == 'L':
+                        review.response = 'L'
+                    if userreview.response == 'D':
+                        review.response = 'D'
             serializer = self.get_serializer(instance=review)
             data = serializer.data
             data['message'] = "Get Review Detail Successfully"
@@ -88,15 +91,30 @@ POST: Create Review
 class ReviewCreateView(generics.CreateAPIView):
     serializer_class = ReviewCreateSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Create Review")
     def post(self, request):
+        feed = request.data.get('feed', '') or None
+        feed = Feed.objects.filter(pk=feed).first()
+        if feed:
+            if not feed.isPublic:
+                group = feed.belongTo
+                groupMember = UserGroup.objects.filter(group=group,user=request.user).first()
+                if not groupMember:
+                    return Response({"message": "Not group member,Unauthorized to react group feed"}, status=status.HTTP_401_UNAUTHORIZED)
+                elif groupMember.isBanned:
+                    if groupMember.banDue > timezone.now():
+                        return Response({"message": "Banned Member,Unauthorized to react group feed"}, status=status.HTTP_401_UNAUTHORIZED)
+                    elif groupMember.banDue < timezone.now():
+                        groupMember.isBanned=False
+                        groupMember.save()
         try:
             user = request.user
             data = request.data
-            data.feed = request.data['feed'] or None
-            data.book = request.data['book'] or None
-            data.movie = request.data['movie'] or None
+            data.feed = request.data.get('feed', '') or None
+            data.book = request.data.get('book', '') or None
+            data.movie = request.data.get('movie', '') or None
             serializer = self.get_serializer(data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save(createdBy=user)
@@ -114,12 +132,14 @@ GET: Get All Reviews
 class ReviewListView(generics.ListAPIView):
     serializer_class = ListReviewSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     # Get All Reviews
     @swagger_auto_schema(operation_summary="Get All Reviews")
     def get_queryset(self):
         orderBy = self.request.GET.get('orderBy')
         search = self.request.GET.get('search')
+        searchName = self.request.GET.get('searchName')
         feed = self.request.GET.get('feed')
         book = self.request.GET.get('book')
         movie = self.request.GET.get('movie')
@@ -129,6 +149,11 @@ class ReviewListView(generics.ListAPIView):
             searchTerms = search.split(' ')
             for term in searchTerms:
                 filter &= Q(title__icontains=term) | Q(description__icontains=term) | Q(createdBy__username__icontains=term) | Q(feed__title__icontains=term) 
+
+        if searchName is not None:
+            searchTerms = searchName.split(' ')
+            for term in searchTerms:
+                filter &= Q(title__icontains=term)
 
         if feed is not None:
             filter &= Q(feed=feed)
@@ -148,12 +173,12 @@ class ReviewListView(generics.ListAPIView):
             review.response = 'O'
 
             if not self.request.user.is_anonymous:
-                userLike = UserReview.objects.filter(user=self.request.user,review=review,response='L').first()
-                if userLike:
-                    review.response = 'L'
-                userDislike = UserReview.objects.filter(user=self.request.user,review=review,response='D').first()
-                if userDislike:
-                    review.response = 'D'
+                userreview = UserReview.objects.filter(user=self.request.user,review=review).first()
+                if userreview:
+                    if userreview.response == 'L':
+                        review.response = 'L'
+                    if userreview.response == 'D':
+                        review.response = 'D'
 
         if orderBy == 'd':
             orderBy = 'dislikes'
@@ -173,10 +198,24 @@ PUT: UserReview relation, uses for response
 class ReviewReactionView(generics.GenericAPIView):
     serializer_class = UserReviewDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="React On Review, ie. Likes, Dislikes")
     def put(self, request, reviewId):
         review = get_object_or_404(Review, pk=reviewId)
+        if review.feed:
+            feed = get_object_or_404(Feed, pk=review.feed.id)
+            if not feed.isPublic:
+                group = feed.belongTo
+                groupMember = UserGroup.objects.filter(group=group,user=request.user).first()
+                if not groupMember:
+                    return Response({"message": "Not group member,Unauthorized to react group feed's review"}, status=status.HTTP_401_UNAUTHORIZED)
+                elif groupMember.isBanned:
+                    if groupMember.banDue > timezone.now():
+                        return Response({"message": "Banned Member,Unauthorized to react group feed's review"}, status=status.HTTP_401_UNAUTHORIZED)
+                    elif groupMember.banDue < timezone.now():
+                        groupMember.isBanned=False
+                        groupMember.save()
         try:
             tmpUserReview = UserReview.objects.get(review=reviewId, user=request.user)  # get one
         except UserReview.DoesNotExist:

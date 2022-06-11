@@ -48,7 +48,7 @@ Serializer class for Creating Review
 class ReviewCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
-        fields = ['title', 'description', 'img', 'feed', 'book', 'movie']
+        fields = ['id','title', 'description', 'img', 'feed', 'book', 'movie']
         
     def validate(self, attrs):
         return super().validate(attrs)

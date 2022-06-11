@@ -1,4 +1,5 @@
 import operator
+from tokenize import group
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.response import Response
@@ -15,223 +16,127 @@ from ..models.userRelations import *
 from ..models.feeds import *
 from ..models.reviews import *
 from ..models.groupRelations import *
+from ..api_throttles import *
 
 '''
 PUT:Set Group Admin -- admin and creator
 PUT: Manage admin request
 '''
-class AdminSetView(generics.GenericAPIView):
+class SetRoleView(generics.GenericAPIView):
     serializer_class = UserGroupDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
-    @swagger_auto_schema(operation_summary="Set Group Admin Role")
-    def put(self,request,groupId,userId,result):
+    @swagger_auto_schema(operation_summary="Set Group Role")
+    def put(self,request,groupId,userId,role):
         userAdmin = get_object_or_404(UserGroup, group=groupId,user=request.user)
+        targetUser = get_object_or_404(UserGroup, group=groupId, user=userId)
 
-        if userAdmin.isAdmin:
-            if userAdmin.isBanned and not userAdmin.isMainAdmin: # Main Admin can do anything
-                if userAdmin.banDue > timezone.now():
-                    return Response({"message": "Set Group Admin Failed, You Are Banned From This Action"}, status=status.HTTP_403_FORBIDDEN)
-                # If bandue is now, set isBanned to fals
-                userAdmin.isBanned = False
+        if userAdmin.isAdmin or userAdmin.isMainAdmin:
+                if role == 1:
+                    if userAdmin.isMainAdmin:
+                        targetUser.isMainAdmin = True
+                        targetUser.isAdmin = False
+                        userAdmin.isMainAdmin = False
+                        userAdmin.isAdmin = True
+                        targetUser.save()
+                        userAdmin.save()
+                        return Response({"message": "Set Main Admin Successfully."}, status=status.HTTP_200_OK)
+                    else:
+                        return Response({"message": "Not Main Admin."}, status=status.HTTP_401_UNAUTHORIZED)
+                
+                if role == 2:
+                    if not targetUser.isMainAdmin:
+                        targetUser.isAdmin = True
+                    else:
+                        return Response({"message": "Target is Main Admin."}, status=status.HTTP_200_OK)
+                    targetUser.save()
+                    user = get_object_or_404(CustomUser, pk=userId)
+                    request = GroupAdminRequest.objects.filter(group=groupId,user=user).first()
+                    if request:
+                        request.result = 1
+                        request.save()
+                    return Response({"message": "Set Admin Successfully."}, status=status.HTTP_200_OK)
+               
+                if role == 3:
+                    if targetUser.isAdmin and not userAdmin.isMainAdmin:
+                        return Response({"message": "Not Main Admin."}, status=status.HTTP_401_UNAUTHORIZED)
+                    targetUser.isAdmin = False
+                    targetUser.isMainAdmin = False
+                    targetUser.save()
+                    user = get_object_or_404(CustomUser, pk=userId)
+                    request = GroupAdminRequest.objects.filter(group=groupId,user=user).first()
+                    if request:
+                        request.result = 2
+                        request.save()
 
-            userApply = get_object_or_404(UserGroup, group=groupId, user=userId)
-            adminrequest = get_object_or_404(GroupAdminRequest,group=groupId,user=userId)
-            adminrequest_serial = AdminRequestSerializer(instance=adminrequest, data={'user':userId,'group':groupId,'result': result})
-            adminrequest_serial.is_valid(raise_exception=True)
-            adminrequest_serial.save(updatedAt=timezone.now())
-            if result == 1:
-                serializer = self.serializer_class(instance=userApply,data={'isAdmin':True})
-                serializer.is_valid(raise_exception=True)
-                serializer.save(updatedAt=timezone.now())
-                data = serializer.data
-                data['message'] = "Set Admin Successfully"
-                return Response(data, status=status.HTTP_200_OK)
-            elif result == 2:
-                return Response({"message": "Request was decline"}, status=status.HTTP_200_OK)
+                    return Response({"message": "Set Normal Member Successfully."}, status=status.HTTP_200_OK)
         else:
-            return Response({"message": "No Permission."}, status=status.HTTP_401_UNAUTHORIZED)
-
-'''
-PUT:Delete Group Admin -- only main admin
-'''
-class AdminDeleteView(generics.GenericAPIView):
-    serializer_class = UserGroupDetailSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    @swagger_auto_schema(operation_summary="Remove Group Admin Role")
-    def put(self,request,groupId,userId):
-        user = request.user
-        isMainAdmin = UserGroup.objects.filter(group=groupId, user=user,isMainAdmin=True)
-
-        if isMainAdmin:
-            userDelete = get_object_or_404(UserGroup, group=groupId, user=userId,isAdmin=True)
-            serializer = self.serializer_class(instance=userDelete,data={'isAdmin':False})
-            serializer.is_valid(raise_exception=True)
-            serializer.save(updatedAt=timezone.now())
-            data = serializer.data
-            data['message'] = "Delete Admin Successfully"
-            return Response(data, status=status.HTTP_200_OK)
-        return Response({"message": "No Permission."}, status=status.HTTP_401_UNAUTHORIZED)
-
-'''
-PUT:Switch Main Admin - only creator/main admin
-'''
-class MainAdminSwitchView(generics.GenericAPIView):
-    serializer_class = UserGroupDetailSerializer
-
-    @swagger_auto_schema(operation_summary="Transfer Main Admin Role")
-    def put(self,request,groupId,userId):
-        user = request.user
-        isMainAdmin = UserGroup.objects.filter(group=groupId, user=user,isMainAdmin=True).first()
-
-        if isMainAdmin:
-            userSwitch = get_object_or_404(UserGroup, group=groupId, user=userId)
-            serializer = self.serializer_class(instance=userSwitch,data={'isMainAdmin':True})
-            serializer.is_valid(raise_exception=True)
-            serializer.save(updatedAt=timezone.now())
-            serializer1 = UserGroupDetailSerializer(instance=isMainAdmin, data={'isMainAdmin': False})
-            serializer1.is_valid(raise_exception=True)
-            serializer1.save(updatedAt=timezone.now())
-            data = serializer.data
-            data['message'] = "Switch Main Admin Successfully"
-            return Response(data, status=status.HTTP_200_OK)
-        return Response({"message": "No Permission."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"message": "Not Group Admin."}, status=status.HTTP_401_UNAUTHORIZED)
+            
 
 ### Feed Management ###
-'''
-PUT:Set Feed as Pinned and Unpin
-'''
-class PinnedFeedView(generics.GenericAPIView):
+class SetPinFeedView(generics.GenericAPIView):
     serializer_class = GroupFeedDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Pin Feed In Group")
     def put(self,request,groupId,feedId):
         userAdmin = get_object_or_404(UserGroup, group=groupId,user=request.user)
 
-        if userAdmin.isAdmin:
+        if userAdmin.isAdmin or userAdmin.isMainAdmin:
             if userAdmin.isBanned and not userAdmin.isMainAdmin: # Main Admin can do anything
                 if userAdmin.banDue > timezone.now():
                     return Response({"message": "Pin Group Feed Failed, You Are Banned From This Action"}, status=status.HTTP_403_FORBIDDEN)
                 # If bandue is now, set isBanned to fals
                 userAdmin.isBanned = False
 
-            isfeed = get_object_or_404(GroupFeed, group=groupId, feed=feedId)
-            if not isfeed.isPin:
-                serializer = self.serializer_class(instance=isfeed,data={'isPin':True})
-                serializer.is_valid(raise_exception=True)
-                serializer.save(updatedAt=timezone.now())
-                data = serializer.data
-                data['message'] = "Pinned Feed Successfully"
-                return Response(data, status=status.HTTP_200_OK)
-            return Response({"message": "Feed Already is Pinned"}, status=status.HTTP_200_OK)
-        return Response({"message": "No Permission."}, status=status.HTTP_401_UNAUTHORIZED)
+            groupFeed = get_object_or_404(GroupFeed, group=groupId, feed=feedId)
+            if not groupFeed.isPin: #if not pin
+                groupFeed.isPin=True
+                groupFeed.updatedAt=timezone.now()
+                groupFeed.save()
+                return Response({"message": "Pin Feed Succesfully"}, status=status.HTTP_200_OK)
+            else: #if is pinned
+                groupFeed.isPin=False
+                groupFeed.updatedAt=timezone.now()
+                groupFeed.save()
+                return Response({"message": "Unpin Feed Succesfully"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "No Permission."}, status=status.HTTP_401_UNAUTHORIZED)
 
-class UnpinFeedView(generics.GenericAPIView):
+
+class SetFeaturedFeedView(generics.GenericAPIView):
     serializer_class = GroupFeedDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    @swagger_auto_schema(operation_summary="Unpin Feed In Group")
-    def put(self,request,groupId,feedId):
-        userAdmin = get_object_or_404(UserGroup, group=groupId,user=request.user)
-        if userAdmin.isAdmin:
-            if userAdmin.isBanned and not userAdmin.isMainAdmin: # Main Admin can do anything
-                if userAdmin.banDue > timezone.now():
-                    return Response({"message": "Unpin Group Feed Failed, You Are Banned From This Action"}, status=status.HTTP_403_FORBIDDEN)
-                # If bandue is now, set isBanned to fals
-                userAdmin.isBanned = False
-
-            isfeed = get_object_or_404(GroupFeed, group=groupId, feed=feedId)
-            if isfeed.isPin:
-                serializer = self.serializer_class(instance=isfeed,data={'isPin':False})
-                serializer.is_valid(raise_exception=True)
-                serializer.save(updatedAt=timezone.now())
-                data = serializer.data
-                data['message'] = "Unpin Feed Successfully"
-                return Response(data, status=status.HTTP_200_OK)
-            return Response({"message": "Feed is not pinned"}, status=status.HTTP_200_OK)
-        return Response({"message": "No Permission."}, status=status.HTTP_401_UNAUTHORIZED)
-
-'''
-PUT:Set Feed as Featured and Unfeatured
-'''
-class FeaturedFeedView(generics.GenericAPIView):
-    serializer_class = GroupFeedDetailSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Set Featured Feed In Group")
     def put(self,request,groupId,feedId):
         userAdmin = get_object_or_404(UserGroup, group=groupId,user=request.user)
 
-        if userAdmin.isAdmin:
+        if userAdmin.isAdmin or userAdmin.isMainAdmin:
             if userAdmin.isBanned and not userAdmin.isMainAdmin: # Main Admin can do anything
                 if userAdmin.banDue > timezone.now():
                     return Response({"message": "Feature Group Feed Failed, You Are Banned From This Action"}, status=status.HTTP_403_FORBIDDEN)
                 # If bandue is now, set isBanned to fals
                 userAdmin.isBanned = False
 
-            isfeed = get_object_or_404(GroupFeed, group=groupId, feed=feedId)
-            if not isfeed.isFeatured:
-                serializer = self.serializer_class(instance=isfeed,data={'isFeatured':True})
-                serializer.is_valid(raise_exception=True)
-                serializer.save(updatedAt=timezone.now())
-                data = serializer.data
-                data['message'] = "Make Feed Featured Successfully"
-                return Response(data, status=status.HTTP_200_OK)
-            return Response({"message": "Feed Already is Featured"}, status=status.HTTP_200_OK)
-        return Response({"message": "No Permission."}, status=status.HTTP_401_UNAUTHORIZED)
+            groupFeed = get_object_or_404(GroupFeed, group=groupId, feed=feedId)
+            if not groupFeed.isFeatured:
+                groupFeed.isFeatured=True
+                groupFeed.updatedAt=timezone.now()
+                groupFeed.save()
+                return Response({"message": "Make feed featured successfully"}, status=status.HTTP_200_OK)
+            else:
+                groupFeed.isFeatured=False
+                groupFeed.updatedAt=timezone.now()
+                groupFeed.save()
+                return Response({"message": "Unfeatured feed successfully"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "No Permission."}, status=status.HTTP_401_UNAUTHORIZED)
 
-class UnfeaturedFeedView(generics.GenericAPIView):
-    serializer_class = GroupFeedDetailSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    @swagger_auto_schema(operation_summary="Remove Featured Feed In Group")
-    def put(self,request,groupId,feedId):
-        userAdmin = get_object_or_404(UserGroup, group=groupId,user=request.user)
-
-        if userAdmin.isAdmin:
-            if userAdmin.isBanned and not userAdmin.isMainAdmin: # Main Admin can do anything
-                if userAdmin.banDue > timezone.now():
-                    return Response({"message": "Unfeatured Group Feed Failed, You Are Banned From This Action"}, status=status.HTTP_403_FORBIDDEN)
-                # If bandue is now, set isBanned to fals
-                userAdmin.isBanned = False
-
-            isfeed = get_object_or_404(GroupFeed, group=groupId, feed=feedId)
-            if isfeed.isFeatured:
-                serializer = self.serializer_class(instance=isfeed,data={'isFeatured':False})
-                serializer.is_valid(raise_exception=True)
-                serializer.save(updatedAt=timezone.now())
-                data = serializer.data
-                data['message'] = "Unfeatured Feed Successfully"
-                return Response(data, status=status.HTTP_200_OK)
-            return Response({"message": "Feed is Not Featured"}, status=status.HTTP_200_OK)
-        return Response({"message": "No Permission."}, status=status.HTTP_401_UNAUTHORIZED)
-
-'''
-DELETE:Delete Group Feed
-'''
-class GroupFeedDeleteView(generics.GenericAPIView):
-    serializer_class = GroupFeedDetailSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    # Delete Group Feed By Id
-    @swagger_auto_schema(operation_summary="Delete Group Feed By Id")
-    def delete(self, request, groupId, feedId):
-        user = get_object_or_404(UserGroup, group=groupId, user=request.user)
-        feed = get_object_or_404(Feed, pk=feedId)
-        if user.isAdmin or feed.createdBy == request.user: 
-            if user.isBanned and not user.isMainAdmin: # Main Admin have all privilege
-                if user.banDue > timezone.now():
-                    return Response({"message": "Feature Group Feed Failed, You Are Banned From This Action"}, status=status.HTTP_403_FORBIDDEN)
-                # If bandue is now, set isBanned to fals
-                user.isBanned = False
-
-            isGroupfeed = get_object_or_404(GroupFeed, group=groupId, feed=feedId)
-            isGroupfeed.delete()
-            feed.delete()
-            return Response({"message": "Delete Group Feed Successfully"}, status=status.HTTP_200_OK)
-        return Response({"message": "No Permission."}, status=status.HTTP_401_UNAUTHORIZED)
 
 '''
 PUT:Banned Member
@@ -239,11 +144,12 @@ PUT:Banned Member
 class GroupMemberBanView(generics.GenericAPIView):
     serializer_class = UserGroupDetailSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    throttle_classes = [anonRelaxed, userRelaxed]
 
     @swagger_auto_schema(operation_summary="Ban Group Member, But Cannot Ban Group Main Admin")
     def put(self,request,groupId,userId):
         userAdmin = get_object_or_404(UserGroup, group=groupId, user=request.user)
-        if userAdmin.isAdmin:
+        if userAdmin.isAdmin or userAdmin.isMainAdmin:
             userBan = get_object_or_404(UserGroup, group=groupId, user=userId)
             if userBan.isMainAdmin:  # Cannot ban group Main Admin
                 return Response({"message": "Unable to Ban Main Admin", "data": serializer.data}, status=status.HTTP_403_FORBIDDEN)
@@ -255,3 +161,5 @@ class GroupMemberBanView(generics.GenericAPIView):
             data['message'] = "Ban Member Successfully"
             return Response(data, status=status.HTTP_200_OK)
         return Response({"message": "No Permission."}, status=status.HTTP_401_UNAUTHORIZED)
+
+

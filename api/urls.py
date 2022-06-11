@@ -9,6 +9,7 @@ from api.views.groupAdminView import *
 from .views import *
 from .views.feedbackApiView import *
 from .views.reportApiView import *
+from .views.tagApiView import *
 
 
 from rest_framework.authtoken.views import obtain_auth_token
@@ -18,6 +19,11 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
 )
 
+'''
+    path('group/deleteAdmin/<uuid:groupId>/<uuid:userId>',AdminDeleteView.as_view(),name="group_admin_remove"),
+        # PUT : switch group main admin
+    path('group/switchAdmin/<uuid:groupId>/<uuid:userId>',MainAdminSwitchView.as_view(),name="group_admin_switch"),
+'''
 
 
 urlpatterns = [
@@ -26,7 +32,9 @@ urlpatterns = [
     path('auth/activate/', UserActivateView.as_view(), name="email_activation"),
     path('auth/request/', RequestPasswordView.as_view(), name="email_verification"),
     path('auth/request-validate/', ResetPasswordTokenValidateView.as_view(), name="reset_password_validate"),
+    path('auth/resetpwd/email/', ResetPasswordEmailView.as_view(), name="reset_password_email"),
     path('auth/resetpwd/old/', ResetPasswordbyOldpasswordView.as_view(), name="reset_password_oldpswd"),
+    path('auth/requestquestion/', RequestQuestionView.as_view(), name="request_securityQuestion"),
     path('auth/resetpwd/question/', ResetPasswordbyQuestionView.as_view(), name="reset_password_secureQ"),
     path('auth/resetquestion/', ResetSecurityQuestionView.as_view(), name="reset_secureQ"),
     path('auth/login/', LoginView.as_view(), name="login"),
@@ -66,18 +74,7 @@ urlpatterns = [
         # POST : apply to become group admin
     path('group/admin/<uuid:groupId>', GroupAdminRequestView.as_view(), name="group_admin_apply"),
         # PUT : set group admin
-    path('group/setAdmin/<uuid:groupId>/<uuid:userId>/<int:result>',AdminSetView.as_view(),name="group_admin_set"),
-    path('group/deleteAdmin/<uuid:groupId>/<uuid:userId>',AdminDeleteView.as_view(),name="group_admin_remove"),
-        # PUT : switch group main admin
-    path('group/switchAdmin/<uuid:groupId>/<uuid:userId>',MainAdminSwitchView.as_view(),name="group_admin_switch"),
-        # PUT : set pinned feed
-    path('group/pinFeed/<uuid:groupId>/<uuid:feedId>',PinnedFeedView.as_view(),name="group_feed_pin"),
-    path('group/unpinFeed/<uuid:groupId>/<uuid:feedId>',UnpinFeedView.as_view(),name="group_feed_unpin"),
-        # PUT : set pinned feed
-    path('group/featuredFeed/<uuid:groupId>/<uuid:feedId>',FeaturedFeedView.as_view(),name="group_feed_featured"),
-    path('group/unfeaturedFeed/<uuid:groupId>/<uuid:feedId>',UnfeaturedFeedView.as_view(),name="group_feed_unfeatured"),
-        # DELETE : Delete group feed
-    path('group/delFeed/<uuid:groupId>/<uuid:feedId>',GroupFeedDeleteView.as_view(),name="group_feed_delete"),
+    path('group/setRole/<uuid:groupId>/<uuid:userId>/<int:role>',SetRoleView.as_view(),name="group_set_role"),
         # PUT : Ban Member
     path('group/banMember/<uuid:groupId>/<uuid:userId>',GroupMemberBanView.as_view(),name="group_member_ban"),
         # GET : Show group user had joined
@@ -89,6 +86,8 @@ urlpatterns = [
         # GET : list all admin request
     path('group/request/<uuid:groupId>', ShowRequestView.as_view(), name="group_request_list"),
     path('group/requestuser/<uuid:groupId>', ShowRequestUserView.as_view(), name="group_requestuser_list"),
+    path('group/setPin/<uuid:groupId>/<uuid:feedId>', SetPinFeedView.as_view(), name="pin_group_feed"),
+    path('group/setFeatured/<uuid:groupId>/<uuid:feedId>', SetFeaturedFeedView.as_view(), name="featured_group_feed"),
 
     # Feed Path
     path('feed/<uuid:feedId>', FeedDetailView.as_view(), name="feed_detail"),
@@ -117,4 +116,12 @@ urlpatterns = [
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('token/verify/', TokenVerifyView.as_view(), name='token_verfy'), 
+
+    #Tag Path
+    path('tag/<uuid:tagId>', TagDetailView.as_view(), name="tag_detail"),
+    path('tag/create/', TagCreateView.as_view(), name="create_tag"),
+    path('tag/join/', TagJoinView.as_view(), name="join_tag"),
+    path('tag/unjoin/<uuid:tagId>', TagUnjoinView.as_view(), name="unjoin_tag"),
+    path('tag/list', TagListView.as_view(), name="tag_list"),
 ]
+    
