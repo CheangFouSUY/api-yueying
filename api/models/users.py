@@ -1,4 +1,3 @@
-from asyncio.windows_events import NULL
 import uuid
 from django.db import models
 from django.utils import timezone

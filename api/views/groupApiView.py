@@ -1,4 +1,3 @@
-from asyncio.windows_events import NULL
 import operator
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
